@@ -1,0 +1,101 @@
+@CHARSET "UTF-8";
+
+.medication_contrast_documentList_msgBox{display:none;}
+.medication_contrast_documentList_msgBox span{margin:10px;line-height:3.2;}
+.medication_contrast_documentList_msgBox_Success{width:100%;min-height:16px;border:2px solid blue;color:blue;background-color:skyblue;font-size:12px;margin:10px 0;}
+.medication_contrast_documentList_msgBox_Error{width:100%;min-height:16px;border:2px solid red;color:red;background-color:pink;font-size:12px;margin:10px 0;}
+
+.Home_communicationList_contentLeft{width:300px; height:580px; float:left;}
+
+.Home_communicationList_cusListTable{overflow:auto;}
+.Home_communicationList_cusListTable table{width:100%;border:1px solid #ddd;border-spacing:0;}
+.Home_communicationList_cusListTable table tr:nth-child(2n){background-color: #eee;}
+.Home_communicationList_cusListTable table th{border:1px solid #eee; text-align:left; height:15px; padding:15px 20px;border-bottom: 1px double #bbb;}
+.Home_communicationList_cusListTable table th span{font-size: 16px;}
+.Home_communicationList_cusListTable table td{border:0px solid #eee; text-align:left; height:10px; padding:15px 20px; font-size: 16px;}
+.Home_communicationList_cusListTable table td span.spanBtn{cursor:pointer; padding: 5px 8px;border:1px solid #aaa; border-radius:5px;font-size: 14px;}
+.Home_communicationList_cusListTable table tr.active{background-color:#19B9A1 !important;}
+.Home_communicationList_cusListTable table tr:not(:first-child):hover{background-color:#19B9A1 !important;} /*여기서 마우스 올리면 색변환 */
+
+.Home_communicationList_contentRight{width:678px;height:600px;float:left;border:1px solid #ddd;text-align:center;}
+#Home_communicationList_communicationList input[type=checkbox] { display: block; text-align:center}
+#Home_communicationList_communicationList td{ text-align: center; vertical-align: middle;}
+.Home_communicationList_cusListTable1{overflow:auto;}
+.Home_communicationList_cusListTable1 table{width:100%;border:1px solid #ddd;border-spacing:0;text-align:center}
+.Home_communicationList_cusListTable1 table th{border:1px solid #eee; height:15px; padding:15px 20px;border-bottom: 1px double #bbb;}
+.Home_communicationList_cusListTable1 table th span{font-size: 16px;}
+.Home_communicationList_cusListTable1 table td{border:0px solid #eee; text-align:left; height:10px; padding:15px 20px; font-size: 16px;}
+.Home_communicationList_cusListTable1 table td span.spanBtn{cursor:pointer; padding: 5px 8px;border:1px solid #aaa; border-radius:5px;font-size: 14px;}
+.Home_communicationList_cusListTable1 table tr.active{background-color:#19B9A1 !important;}
+.Home_communicationList_cusListTable1 table tr:hover{background-color:#19B9A1 !important;} /*여기서 마우스 올리면 색변환 */
+
+
+ /***********add**********************/
+.Home_communicationForm_Content{text-align: left; font-size: 13px;width: 880px;margin: 0 auto;}
+.Home_communicationForm_Content label{vertical-align: middle;}
+.Home_communicationForm_title{margin-left: 10px; margin-right: 10px}
+.Home_communicationForm_Kinds{margin-left: 10px;margin-right: 10px;color: #333 !important;}
+.Home_communicationForm_class{margin-left: 10px;margin-right: 10px;color: #333 !important;}
+.Home_communicationForm_image{border: 1px solid #ddd;width: 878px;height: 313px;display: inline-block;overflow-x: hidden;overflow-y: auto;}
+.Home_communicationForm_textarea{border: 1px solid #ddd;width: 878px;height: 175px; overflow: auto;display: inline-block;}
+.Home_communicationForm_textarea textarea{width:878px;height: 175px; border: none;resize: none;}
+.Home_communicationForm_TopContent{margin-bottom: 10px;}
+.Home_communicationForm_TopContent img{width: 90px;height: 25px;vertical-align: middle;float: right;margin-top: 1px;cursor: pointer;}
+
+.ImageChoose{text-align: center;height: 37px;background-color: #f1f1f1;position:relative;border-top: 1px solid #ddd;
+border-left: 1px solid #ddd;border-right: 1px solid #ddd;width: 878px;height: 36px;}
+.file_input_img_btn {width: 200px;height: 27px; margin: 5px 0 5px 0;cursor:pointer;}
+.Home_communicationForm_imgfile {position:absolute;right:340px;top:5px;opacity:0;filter: alpha(opacity=0);
+-ms-filter: alpha(opacity=0);cursor:pointer;width: 200px;height: 27px;}
+
+.Homefile_input_textbox {width:200px; height:27px;}
+.file_input_div {position:relative;width: 27px;height: 27px;overflow:hidden;display: inline-block;vertical-align: top;}
+.Homefile_input_img_btn {width: 27px; height: 27px;cursor: pointer;}
+.Homefile_input_hidden {position:absolute;right:0px;top:0px;opacity:0;
+filter: alpha(opacity=0);-ms-filter: alpha(opacity=0);cursor:pointer;width: 27px; height: 27px;}
+
+
+.holder{width: 880px;}
+.holder img{display: block;margin: 5px auto;}
+
+#Home_communicationForm_Preview{background-color: #f1f1f1; position:absolute;width: 360px; height: 640px; z-index: 1; display: none;
+top: 60px;left: 395px; border:3px solid #c2c1c1; }
+.Preview_Title{background-color: #f5c21c;height: 50px;font-size: 25px;color: #fff;font-weight: 400;text-align: center;    padding-top: 15px;}
+.Preview_Content{background-color: #fff;width: 310px;height: 475px;border-radius: 10px;margin: 10px; padding:15px; overflow-x:hidden; overflow-y:auto;}
+.Preview_Content_Teacher{ height: 56px; margin-bottom: 10px;}
+.Preview_Content_Teacher img{width: 54px;height: 54px;border-radius: 50%; border: 1px solid #F5C21C;}
+
+.Preview_Content_Teacher table{border-spacing:0;border-collapse: collapse;}
+.Preview_Content_Teacher table th{font-size: 16px; padding:3px 7px 0; text-align: left;}
+.Preview_Content_Teacher table td{font-size: 14px; padding:0px 7px 0;}
+
+.Preview_Content_Title{display:block;padding:15px 0;color:#272828; font-weight:bold;font-size:14px; }
+.Preview_Content_Img{display:block;width: 293px;height: 293px;overflow-x: hidden;overflow-y: auto;}
+.Preview_Content_Img img{margin-top: 5px;margin-bottom: 5px;}
+.Preview_Content_Content{display:block;padding:15px 0; color:#6C6E70; font-size:14px; font-weight:bold;word-break: keep-all;}
+.Preview_Content_File{border:1px solid #f1f1f1;background-color: #f1f1f1;display:block;border-radius:10px; padding:7px;}
+.Preview_Content_File .Preview_Content_File_Icon{display:inline-block; width: 40px; height: 40px; border:1px solid #fff; border-radius:50%; overflow:hidden;vertical-align:middle;}
+.Preview_Content_File .Preview_Content_File_Icon img{width: 40px; height: 40px;}
+
+.Preview_Content_File_Title{display:inline-block;}
+
+.btn_send_text{cursor:pointer; width:80px;height:25px;background-image: url("../images/button/button_send_80x25(x2).png");background-repeat:no-repeat;background-size: 80px 25px;background-position: center center;border: 0;}
+.btn_cancel_text{cursor:pointer;width:80px;height:25px;background-image: url("../images/button/button_cancel_80x25(x2).png");background-repeat:no-repeat;background-size: 80px 25px;background-position: center center;border: 0;}
+.Preview_Content_Ok{width: 90px;margin: 0 auto;display: block;}
+
+.Home_communicationList_Content{text-align: center;}
+#Home_communicationList_communicationList img{width: 50px; height: 20px;}
+
+.Home_communicationDetail_TopContent table{width: 700px;}
+.Home_communicationDetail_TopContent table td{height:27px; padding-right: 20px;font-size: 13px;}
+.Home_communicationDetail_TopContent table td input{padding-left: 5px;}
+.Home_communicationDetail_TopContent table td img{width: 50px;height: 27px;padding-left: 10px;cursor: pointer;}
+#Home_communicationDetail_check{width:150px;height:27px;;padding-right: 0px;border:1px solid #C2C1C1; text-align: center;border-radius: 4px;}
+
+.Home_communicationDetail_Content{width: 880px;margin: 0 auto;}
+.Home_communicationDetail_image{border: 1px solid #ddd;width: 878px;height: 350px; overflow: auto;}
+.Home_communicationDetail_image img{width:400px;display: block;margin: 5px auto;}
+.Home_communicationDetail_textarea{border: 1px solid #ddd;width: 878px; height: 175px; overflow: auto;}
+
+.Home_communicationDetail_BottomContent div a{text-decoration:none; color:#22A5B9;}
+.Home_communicationDetail_BottomContent div a:HOVER{text-decoration:underline;}

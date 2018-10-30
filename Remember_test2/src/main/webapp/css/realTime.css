@@ -1,0 +1,162 @@
+@CHARSET "UTF-8";
+
+.realTimeBox{width:1080px;border:1px solid #ddd;min-height:700px;}
+
+.realTimeList{width:230px;padding:15px 0px;min-height:700px;display:inline-block;}
+.realTimeList h3{padding:0 8px;}
+.realTimeContent{min-height:732px; width:820px;margin-left:-5px;border-left:1px solid #ddd;padding:15px 10px;display:inline-block;vertical-align:top;}
+.realTimeContent .AllRouteBtn{width:820px; text-align:right;}
+.realTimeContent .AllRouteBtn a{text-decoration:none; font-size:12px;border:1px solid #333; border-radius:5px;padding: 5px 3px;color:#333;}
+
+.realTimeViewerBox-L{width:500px; display:inline-block;}
+.realTimeViewerBox-R{width:310px; display:inline-block;vertical-align:top;}
+
+.realTimeViewerBox-Content-L{width:300px;display:inline-block;}
+.realTimeViewerBox-Content-R{width:190px; display:inline-block;vertical-align:top;}
+.realTimeViewerBox-Content-L table{width:350px;}
+.realTimeViewerBox-Content-R table{width:190px;border:1px solid #aaa;border-spacing:0px;border-collapse:collapse;}
+.realTimeViewerBox-Content-R table td{text-align:center;font-size:25px;}
+.realTimeViewerBox-Content-R table td:FIRST-CHILD{border-right:1px solid #aaa;padding-bottom:8px;}
+.realTimeViewerBox-Content-R table th:FIRST-CHILD{border-right:1px solid #aaa;}
+.realTimeViewerBox-Content table th{padding:8px 0;}
+
+.realTimeList .searchBox{padding:0 8px;width:250px;float:initial;}
+.realTimeList .searchBox input#keyWord{width:210px;margin-bottom:10px;}
+
+.realTimeList-Content {border-top:1px solid #ddd;border-bottom:1px solid #ddd;}
+.realTimeList-Content ul li{list-style:none;padding:15px 8px;border-bottom:1px solid #ddd;cursor:pointer;}
+.realTimeList-Content ul li:LAST-CHILD{border-bottom:0px solid #ddd;}
+.realTimeList-Content ul li span{}
+
+.realTimeViewerBox{width:820px;}
+.realTimeViewerBox-Content{margin-bottom:40px;}
+.realTimeViewerBox-Content span{color:red;font-weight:bolder;}
+
+
+.realTimeViewerBox-Title{font-size: 18px;font-weight: 900;margin-bottom: 20px;}
+
+
+
+
+.realTimeView-Box{border:1px solid black;width:820px; height:600px;}
+.realTimeView-Box-L{width:110px; display:inline-block;vertical-align:top;}
+.realTimeView-Box-R{width:704px; display:inline-block;}
+
+.realTime-St-start{width:110px;}
+.realTime-St-start .realTime-St-img, .realTime-St-last .realTime-St-img{background-image: url("https://www.shareicon.net/download/2016/08/04/806673_school_512x512.png");background-size: 90px;background-repeat: no-repeat; background-position: center;}
+.realTime-St-station{width:236px;}
+.realTime-St-Box{float:left;}
+
+.realTime-width2{width:235px;}
+.realTime-width2 .realTime-St-Full{display:block;text-align: right;float:right;margin-right:8px;}
+.realTime-width .realTime-St-Full{display:block;text-align: right;float:right;}
+.realTime-marginT .realTime-St-Full{display:block;text-align: right;float:left;margin-left:8px;}
+.realTime-St-Full-Last{display:block;text-align: right;float:left;margin-left:8px;}
+
+.realTime-width2 .realTime-St-L{width: 122px;border-bottom: 6px solid gray;padding-top: 35px;text-align: center;float:left;}
+.realTime-marginT .realTime-St-L{width: 122px;border-bottom: 6px solid gray;padding-top: 35px;text-align: center;float:left;margin-bottom:40px;}
+.realTime-St-R{width:110px;float:left;}
+
+.realTime-Float-L{float:left;}
+.realTime-Float-LT{width:110px;}
+.realTime-Float-RT{width:110px;}
+.realTime-Float-R{float:right;}
+.realTime-Float-R .realTime-St-L{float:right;}
+.realTime-Float-L .realTime-St-R{float:left;}
+.realTime-Float-L .realTime-St-Full{float:right;}
+.realTime-width{width:110px;height:194px; }
+
+.realTime-marginT{margin-top:59px;}
+.realTime-Float-B{padding-left:10px;padding-top:15px;height:35px;display:block;border-left:6px solid gray; border-bottom:0px;margin-left: 53px;}
+.realTime-Float-BB{padding-right:10px;padding-top:15px;height:35px;display:block;border-right:6px solid gray; border-bottom:0px;margin-right: 53px;}
+.realTime-St-station{border:0px solid blue;text-align:center;margin-bottom: 10px;}
+.realTime-St{display:block;}
+
+.realTime-St .realTime-St-img{background-image: url("https://d30y9cdsu7xlg0.cloudfront.net/png/731-200.png");background-size: 90px;background-repeat: no-repeat; background-position: center;}
+.realTime-St-img{width:110px; height:100px;}
+.realTime-St-Title{text-align:center;font-size: 14px;min-width:80px;}
+.realTime-St-Time{text-align:center;}
+
+
+
+
+
+
+
+.checkManagement-Text{}
+.checkManagement-Text ul li{list-style: none;margin-bottom:8px;}
+.checkManagement-Text ul li:BEFORE{content: "▶";margin-right:5px;}
+
+
+.checkManagement-Table table{border-spacing:0; border-collapse:collapse;}
+.checkManagement-Table td,.checkManagement-Table th{border:1px solid #bbb;}
+.checkManagement-Table td{text-align:center;}
+.checkManagement-Table th{padding:5px 5px;min-width:35px;}
+
+
+.checkManagement-Table input[type="checkbox"] {
+    display:none;
+}
+
+.checkManagement-Table input[type="checkbox"] + label {
+    color:#f2f2f2;
+}
+
+.checkManagement-Table input[type="checkbox"] + label span {
+    display:inline-block;
+    width:37px;
+    height:24px;
+    vertical-align:middle;
+/*     background-color:#eee; */
+/*     cursor:pointer; */
+}
+.carCheckManagement_Update #teach_check_Table1 input[type="checkbox"] + label span { cursor:pointer;}
+
+.checkManagement-Table input[type="checkbox"]:checked + label span{
+	background-color:#fff;
+}
+
+.checkManagement-Table input[type="checkbox"]:checked + label span:AFTER {
+	content: '✔';
+    width:15px;
+    height:15px;
+    color:#333;
+}
+
+.checkManagement-Table input[type="radio"] {
+    display:none;
+}
+
+.checkManagement-Table input[type="radio"] + label {
+    color:#f2f2f2;
+    font-family:Arial, sans-serif;
+}
+
+.checkManagement-Table input[type="radio"] + label span {
+    display:inline-block;
+    width:19px;
+    height:19px;
+    margin:-2px 10px 0 0;
+    vertical-align:middle;
+    background:url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/210284/check_radio_sheet.png) -38px top no-repeat;
+    cursor:pointer;
+}
+
+.checkManagement-Table input[type="radio"]:checked + label span {
+    background:url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/210284/check_radio_sheet.png) -57px top no-repeat;
+}
+
+
+.CheckBreakdown-Box{margin-bottom:40px;width:410px;}
+.CheckBreakdown-Box button{float:right;}
+
+
+.CheckBreakdown-Box-Title{margin-bottom:10px;padding-right:54px;}
+.CheckBreakdown-Box-Con{}
+.CheckBreakdown-Box-Con table{}
+.CheckBreakdown-Box-Con table td{padding-bottom:8px;}
+
+
+
+/******************20180227****************/
+.checkManagement-Table{padding-top: 20px;text-align: left;}

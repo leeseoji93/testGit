@@ -1,0 +1,100 @@
+@CHARSET "UTF-8";
+
+.medication_contrast_documentList_msgBox{display:none;}
+.medication_contrast_documentList_msgBox span{margin:10px;line-height:3.2;}
+.medication_contrast_documentList_msgBox_Success{width:100%;min-height:16px;border:2px solid blue;color:blue;background-color:skyblue;font-size:13px;margin:10px 0;}
+.medication_contrast_documentList_msgBox_Error{width:100%;min-height:16px;border:2px solid red;color:red;background-color:pink;font-size:13px;margin:10px 0;}
+
+/* #medication_contrast_documentList_ClassList ul{list-style:none; } */
+/* #medication_contrast_documentList_ClassList ul li{padding:15px 10px; border:1px solid #eee;cursor:pointer;} */
+/* #medication_contrast_documentList_ClassList ul li:HOVER{background:#19B9A1 !important; color:#fff;border:1px solid #19B9A1 !important;} */
+/* #medication_contrast_documentList_ClassList ul li:nth-child(2n){border:1px solid #eee; background:#eee;} */
+/* #medication_contrast_documentList_ClassList ul li span{font-size:12px; float:right;} */
+
+#medication_contrast_documentList_kidList input[type=checkbox] {text-align:center}
+#medication_contrast_documentList_kidList td{ text-align: center; vertical-align: middle;}
+/* .medication_contrast_documentList_cusListTable1{overflow:auto;} */
+ 
+ .medication_contrast_documentDetail_content{width: 840px; height: 420px; border:1px solid #000000;font-size: 13px; margin: 0px auto;margin-bottom: 35px;}
+ .medication_contrast_documentDetail_contentLeft{width: 416px; height:420px;text-align:center;border-right:1px solid #000000;display: inline-block;}
+ .medication_contrast_documentDetail_contentLeft div{margin:10px;}
+ .medication_contrast_documentDetail_contentLeft div.responsibility{text-decoration: underline;font-weight: bold;text-align: left;margin-top: 24px;}
+ .medication_contrast_documentDetail_contentLeft h3{font-size: 16px;}
+ .medication_contrast_documentDetail_contentLeft span{margin-left: 40px;margin-right:50px;}
+ .medication_contrast_documentDetail_contentLeft table{border-bottom:1px solid #000000;border-top:1px solid #000000; width: 100%; margin: auto;font-size: 13px;border-spacing: 10px 10px;}
+ .medication_contrast_documentDetail_contentLeft table th{width:135px;text-align:right;}
+ .medication_contrast_documentDetail_contentLeft table td{text-align:left;}
+ 
+ .medication_contrast_documentDetail_contentRight{width: 416px; height:420px;text-align:center;border-left:1px solid #000000;display: inline-block;vertical-align: top;}
+ .medication_contrast_documentDetail_contentRight h3{font-size: 16px;margin-bottom:43px;}
+ .medication_contrast_documentDetail_contentRight div{margin:10px;}
+ .medication_contrast_documentDetail_contentRight table{text-align:center; width: 99%; margin: auto; border-spacing: 0px;border-collapse:collapse;font-size: 13px;}
+ .medication_contrast_documentDetail_contentRight table th, .medication_contrast_documentDetail_contentRight table td{border:1px solid #000000; padding:10px;}
+ .medication_contrast_documentDetail_contentRight div.responsibility{margin-top:55px;font-weight: bold;} 
+ .medication_contrast_documentDetail_contentRight span{margin-left: 40px;margin-right:50px;}
+ .medication_contrast_documentDetail_contentRight .medication_contrast_documentDetail_centerName{float: right; margin-top: 45px;}
+ #sign_parent{position: absolute; top: 425px;left: 387px;width: 90px;height: auto; }
+ #sign_teacher{position: absolute;top: 400px;left: 820px;width: 90px;height: auto;}
+
+ /***********************************************투약대조서******************************************************************************/ 
+.medication_diaryList_contentLeft{width:300px; height:580px; float:left;}
+.medication_diaryList_cusListTable{overflow:auto;}
+.medication_diaryList_cusListTable table{width:100%;border:1px solid #ddd;border-spacing:0;}
+.medication_diaryList_cusListTable table tr:nth-child(2n){background-color: #eee;}
+.medication_diaryList_cusListTable table th{border:1px solid #eee; text-align:left; height:15px; padding:15px 20px;border-bottom: 1px double #bbb;}
+.medication_diaryList_cusListTable table th span{font-size: 16px;}
+.medication_diaryList_cusListTable table td{border:0px solid #eee; text-align:left; height:10px; padding:15px 20px; font-size: 16px;}
+.medication_diaryList_cusListTable table td span.spanBtn{cursor:pointer; padding: 5px 8px;border:1px solid #aaa; border-radius:5px;font-size: 14px;}
+.medication_diaryList_cusListTable table tr.active{background-color:#19B9A1 !important;}
+.medication_diaryList_cusListTable table tr:not(:first-child):hover{background-color:#19B9A1 !important;} /*여기서 마우스 올리면 색변환 */
+
+/* #medication_contrast_documentList_ClassList ul{list-style:none; } */
+/* #medication_contrast_documentList_ClassList ul li{padding:15px 10px; border:1px solid #eee;cursor:pointer;} */
+/* #medication_contrast_documentList_ClassList ul li:HOVER{background:#19B9A1 !important; color:#fff;border:1px solid #19B9A1 !important;} */
+/* #medication_contrast_documentList_ClassList ul li:nth-child(2n){border:1px solid #eee; background:#eee;} */
+/* #medication_contrast_documentList_ClassList ul li span{font-size:12px; float:right;} */
+
+.medication_diaryList_contentRight{width:678px;height:600px;float:left;border:1px solid #ddd;text-align:center;}
+#medication_diaryList_DiaryLList input[type=checkbox] { display: block; text-align:center}
+#medication_diaryList_DiaryLList td{ text-align: center; vertical-align: middle;}
+.medication_diaryList_cusListTable1{overflow:auto;}
+.medication_diaryList_cusListTable1 table{width:100%;border:1px solid #ddd;border-spacing:0;text-align:center}
+.medication_diaryList_cusListTable1 table th{border:1px solid #eee; height:15px; padding:15px 20px;border-bottom: 1px double #bbb;}
+.medication_diaryList_cusListTable1 table th span{font-size: 16px;}
+.medication_diaryList_cusListTable1 table td{border:0px solid #eee; text-align:left; height:10px; padding:15px 20px; font-size: 16px;}
+.medication_diaryList_cusListTable1 table td span.spanBtn{cursor:pointer; padding: 5px 8px;border:1px solid #aaa; border-radius:5px;font-size: 14px;}
+.medication_diaryList_cusListTable1 table tr.active{background-color:#19B9A1 !important;}
+.medication_diaryList_cusListTable1 table tr:hover{background-color:#19B9A1 !important;} /*여기서 마우스 올리면 색변환 */
+
+.medication_diaryDetail_pageContent table .td_signCell{padding:10px 20px;line-height:3; width: 30px}
+.medication_diaryDetail_pageContent table .td_titleCell{border-top:1px solid #fff;border-left:1px solid #fff;font-size: 25px;font-weight: 700;}
+.medication_diaryDetail_pageContent table .td_uniquenessCell{line-height: 167px;padding: 10px;text-align: left;position: relative;top: -80px;}
+.medication_diaryDetail_pageContent table{width:590px;border: 1px solid #000000;border-collapse:collapse;text-align:center;margin: 0 auto;font-size: 13px;}
+.medication_diaryDetail_pageContent table th, .medication_diaryDetail_pageContent table td{border:1px solid #000000;line-height: 30px}
+ /***********************************************투약일지******************************************************************************/
+ 
+  /***********add**********************/
+.medication_contrast_documentDetail_back{display: inline-block;width: 90px;height: 25px; }
+.medication_contrast_documentDetail_down{display: inline-block;width: 90px;height: 25px;}
+
+
+#medication_diaryDetail_pre_btn{width: 23px;height: 23px;cursor: pointer;}
+#medication_diaryDetail_next_btn{width: 23px;height: 23px;cursor: pointer;}
+
+#medication_diaryDetail_pageCount{width: 80px;height: 21px;text-align: center;vertical-align: top;border: 1px solid #23A6BA;margin-left: 10px;margin-right: 10px;}
+.medication_diaryDetail_btn span{display: inline-block;}
+.medication_diaryDetail_btn{text-align: center; margin-top: 20px; margin-bottom: 20px;}
+.medication_diaryDetail_btn{text-align: center;}
+.btnLeftBox img{width: 80px; height: 25px;cursor: pointer;}
+.btnCnterBox img{width: 90px; height: 25px;cursor: pointer;}
+.centerDownBtn{position: relative; left: -39px;}
+#medication_diaryDetail_DownLoadbtn{margin-top: 0px; margin-bottom: 0px;}
+.medication_diaryDetail_pageContent table th{background-color: #f0f0f0;}
+
+ 
+ 
+ 
+ /*******************20180222 추가********************/
+.cusListTable_contentRight_title{float:left;margin-bottom: 7px;width: 100%;}
+.medication_contrast_documentList .cusListTable3{clear:both; height: 579px;}
+.medication_contrast_documentList #msgBox{width: 825px; margin: 0 auto 10px auto;}

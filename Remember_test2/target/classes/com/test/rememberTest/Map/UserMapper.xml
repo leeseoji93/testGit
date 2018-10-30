@@ -1,0 +1,2477 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.test.rememberTest.Map.UserMapper">
+
+	<!-- staff 권한 업데이트하기 -교직원 -->
+	<update id="staffDownRoles" parameterType="com.test.rememberTest.Dto.StaffDto">
+		update user_roles set
+		role=#{downRoles}
+		
+		where center_code=#{center_code} and
+		staff_id=#{staff_id}
+	</update>
+	
+	<!-- 차량일일점검표 -->
+    <select id="getLatestCheckList" parameterType="com.test.rememberTest.Dto.Teach_bus_checkDto" resultType="com.test.rememberTest.Dto.Teach_bus_checkDto">
+        SELECT t.center_code,t.staff_id, DATE_FORMAT(t.today,'%Y-%m-%d') AS checkDateD,DATE_FORMAT(t.today,'%Y') AS checkDateYear,DATE_FORMAT(t.today,'%m') AS checkDateMon,
+		t.route_id,t.updatetime,bc.route_name,bc.bus_num, bc.bus_staff
+		FROM teach_bus_check t
+		left join bus_daily_check bc
+		on bc.today = t.today AND bc.route_id = t.route_id
+		WHERE t.center_code=#{center_code}
+		group by checkDateMon, t.route_id order by checkDateD desc limit 6; 
+    </select>
+	<!-- 대쉬보드 -운행일지 -->
+	 <select id="latest_RecordDriv_Doc" parameterType="com.test.rememberTest.Dto.RecordDto" resultType="com.test.rememberTest.Dto.RecordDto">
+        SELECT dd.affiliation,dd.bus_id,dd.bus_name,DATE_FORMAT(dd.createtime,'%Y-%m-%d') as createDateFormat,dd.dirver_name,dd.driv_doc,dd.end_time,dd.route_id,dd.route_name,dd.start_time,dd.updatetime, 
+		route.route_type
+		FROM driv_doc dd
+		left join route 
+		ON route.affiliation = dd.affiliation AND route.route_id = dd.route_id  
+        WHERE dd.affiliation=#{center_code} 
+        order by dd.createtime desc limit 6;
+    </select>
+	
+	<select id="getMyClassInfo"  parameterType="com.test.rememberTest.Dto.ClassDto" resultType="com.test.rememberTest.Dto.ClassDto">
+        SELECT class.*,count(kid.kid_system_code) as totalKidsCnt
+		FROM class 
+		left join kid
+		on kid.center_code = class.center_code
+		and kid.class_id = class.class_id
+		where staff_id_1=#{id} or staff_id_2=#{id};
+    </select>
+    <!-- 행정구역코드 불러오기 -->
+    <select id="selectArea_cityName" parameterType="com.test.rememberTest.Dto.korea_admin_areaDto" resultType="com.test.rememberTest.Dto.korea_admin_areaDto">
+        SELECT * FROM korea_admin_area GROUP BY city_code;
+    </select>
+    <select id="selectArea_districtName" parameterType="com.test.rememberTest.Dto.korea_admin_areaDto" resultType="com.test.rememberTest.Dto.korea_admin_areaDto">
+        SELECT * FROM korea_admin_area WHERE city_code=#{cityCode} GROUP BY district_code;
+    </select>
+    <select id="selectArea_townshipName" parameterType="com.test.rememberTest.Dto.korea_admin_areaDto" resultType="com.test.rememberTest.Dto.korea_admin_areaDto">
+        SELECT * FROM korea_admin_area WHERE district_code=#{districtCode};
+    </select>
+    <select id="selectArea_gu" parameterType="com.test.rememberTest.Dto.korea_admin_areaDto" resultType="com.test.rememberTest.Dto.korea_admin_areaDto">
+        SELECT DISTINCT district_code,district_name FROM korea_admin_area WHERE city_name=#{si};
+    </select>
+    <select id="selectArea_dong" parameterType="com.test.rememberTest.Dto.korea_admin_areaDto" resultType="com.test.rememberTest.Dto.korea_admin_areaDto">
+        SELECT DISTINCT township_code,township_name FROM korea_admin_area WHERE city_name=#{gu};
+    </select>
+    
+    <!-- 대쉬보드 : 계정관리-->
+    <select id="dashboardAccountCount" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.StaffDto">
+        select (select count(kid.kid_system_code) FROM kid where kid.center_code=#{center_code}) as kid_AllCount,
+		(select count(*) FROM staff where staff.center_code=#{center_code}) as staff_AllCount,
+		(select count(*) FROM parent_and_kid where parent_and_kid.center_code=#{center_code} AND check_stater='승인') as parent_and_kid_AllCount_a,
+		(select count(*) FROM parent_and_kid where parent_and_kid.center_code=#{center_code} AND check_stater='대기') as parent_and_kid_AllCount_d;
+
+    </select>
+    
+    <!-- 대쉬보드 : 기기관리-->
+    <select id="dashboardEquiCount" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.EquipmentDto">
+        select (select count(*) from beacon where beacon.center_code=#{center_code}) as beacon_AllCount,
+		(select count(*) from equipment where equipment.center_code=#{center_code} and equipment.equipment_type='테블릿') as tablet_AllCount,
+		(select count(*) from equipment where equipment.center_code=#{center_code} and equipment.equipment_type='게이트웨이') as gateway_AllCount,
+		(select count(*) from beacon where beacon.center_code=#{center_code} and beacon.beacon_use='원아배정') as beacon_Use_AllCount,
+		(select count(*) from bus where (bus.center_code=#{center_code}) and (bus.equipment_gate_id != null or bus.equipment_gate_id != '')) as gateway_Use_AllCount,
+		(select count(*) from bus where (bus.center_code=#{center_code}) and (bus.equipment_gate_id != null or bus.equipment_tablet_id != '')) as tablet_Use_AllCount,
+		(select count(*) from damage_goods where (damage_goods.center_code=#{center_code}) and SUBSTRING(damage_goods.damege_type,12,1)= "G") as damage_gateway_AllCount,
+		(select count(*) from damage_goods where (damage_goods.center_code=#{center_code}) and SUBSTRING(damage_goods.damege_type,12,1)= "T") as damage_tablet_AllCount,
+		(select count(*) from damage_goods where (damage_goods.center_code=#{center_code}) and SUBSTRING(damage_goods.damege_type,12,1)= "B") as damage_beacon_AllCount;
+    </select>
+    
+    <!-- 대쉬보드 : 차량 및 정류장 개수-->
+    <select id="carNStationCount" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.BusRouteDto">
+        select(select count(*) from station where station.affiliation=#{center_code}) as station_AllCount,
+		(select count(*) from bus where bus.center_code=#{center_code}) as bus_AllCount,
+		(select count(*) from station where (station.affiliation=#{center_code}) and (station.station_use =1)) as station_Use_AllCount,
+		(select count(*) from bus where (bus.center_code=#{center_code}) and (bus.bus_use =1)) as bus_Use_AllCount;
+    </select>
+    
+    <!-- 대쉬보드 : 최근 노선 3개-->
+    <select id="routeLatestList" parameterType="java.util.Map"  resultType="com.test.rememberTest.Dto.BusRouteDto">
+        SELECT route.*,(select count(*) from board_and_kid
+		where route.route_id = board_and_kid.route_id) as kid_count
+		FROM route 
+		WHERE route.affiliation =#{center_code}
+		ORDER BY updatetime DESC LIMIT 3;
+    </select>
+    
+    <!-- 대쉬보드 : 최근 투약일지 3개-->
+    <select id="Medication_requestLatestList" parameterType="java.util.Map"  resultType="com.test.rememberTest.Dto.Medication_requestDto">
+        select medication_request.request_id,
+		medication_request.volume,Time_format(medication_request.dosing_time,'%H시 %i분') as dosing_time,
+		Date_format(medication_request.medication_date,'%Y-%m-%d') as
+		medication_date,kid.kid_name,medication_request.medication_kind,
+		medication_request.symptom,staff.staff_name
+		from medication_request
+		join kid
+		on kid.kid_system_code = medication_request.kid_system_code AND
+		kid.class_id =#{class_id}
+		join medication_confirmation
+		on medication_request.request_id = medication_confirmation.request_id
+		join staff
+		on medication_request.staff_id = staff.staff_id
+		where medication_request.center_code=#{center_code}
+  		order by medication_request.medication_date desc limit 3;
+    </select>
+    
+    <!-- 대쉬보드 : 최근 가정통신문 3개-->
+    <select id="home_communi_LatestList" parameterType="java.util.Map"  resultType="com.test.rememberTest.Dto.Home_communicationDto">
+        select home_communication.center_code,home_communication.communication_id, home_communication.staff_id,
+		home_communication.title, home_communication.content, home_communication.tag_id,
+		Date_format(home_communication.create_time,'%Y-%m-%d') as create_time,
+		Date_format(home_communication.update_time,'%Y-%m-%d') as update_time,
+		staff.staff_name,communication_tag.tag_name,file_attachement.file_url
+		from kid
+		join homecommunication_trans
+		on kid.kid_system_code = homecommunication_trans.kid_system_code AND kid.class_id =#{class_id}
+		join home_communication
+		on homecommunication_trans.communication_id = home_communication.communication_id
+		join staff
+  		on staff.staff_id = home_communication.staff_id
+  		join communication_tag
+ 		on home_communication.tag_id = communication_tag.tag_id	
+ 		left join file_attachement on file_attachement.communication_id = home_communication.communication_id	
+		group by homecommunication_trans.communication_id
+    	order by home_communication.update_time desc limit 5;
+    </select>
+    
+    
+    <!-- 운행일지 -->
+    <select id="selectDetailRecordList" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.RecordDto">
+        SELECT dl.affiliation,DATE_FORMAT(dl.date,'%Y.%m.%d') AS dateFormat,dl.driv_doc,dl.driv_log,
+		dl.real_time_id,dl.route_id,dl.station_name,dl.time ,
+		dd.route_name, dd.bus_name, dd.bus_num, dd.dirver_name
+		FROM driv_log dl 
+		left join driv_doc dd
+		on dd.driv_doc = dl.driv_doc
+        WHERE dl.date like concat(#{day},'%') and dl.route_id=#{route_id}
+        order by dl.driv_log asc;
+    </select>
+    
+    <select id="selectRecord_DownData" resultType="com.test.rememberTest.Dto.RecordDto" parameterType="java.util.Map">
+	  	SELECT dl.affiliation,DATE_FORMAT(dl.date,'%Y.%m.%d') AS createDateFormat,dl.driv_doc,dl.driv_log,dl.real_time_id,dl.route_id,dl.station_name,dl.time ,
+		dd.route_name, dd.bus_num, dd.bus_name, dd.dirver_name, DATE_FORMAT(dl.date,'%d') AS `day`,
+		(select count(driv_doc) from driv_log dl2 where dl2.driv_doc = dl.driv_doc) as doccount
+		FROM driv_log dl 
+		left join driv_doc dd on dd.driv_doc = dl.driv_doc
+        WHERE dl.route_id=#{route_id} and 
+	<foreach collection="dtoList" item="item" index="index" separator=" or " open="" close="">
+		 dl.driv_doc = #{item.driv_doc}  
+	</foreach>
+	 	order by dl.driv_log asc;	
+	</select><!-- 차량운행일지 다운로드 -->
+    
+    <select id="selectRecordDriv_Doc" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.RecordDto">
+        SELECT dd.affiliation,dd.bus_id,dd.bus_name,DATE_FORMAT(dd.createtime,'%Y.%m.%d') as createDateFormat,dd.dirver_name,dd.driv_doc,dd.end_time,dd.route_id,dd.route_name,dd.start_time,dd.updatetime, 
+		route.route_type
+		FROM driv_doc dd
+		left join route 
+		ON route.affiliation = dd.affiliation AND route.route_id = dd.route_id  
+        WHERE dd.affiliation=#{center_code} and dd.createtime like concat(#{selectYM},'%') and dd.route_id=#{route_id}
+        order by dd.createtime asc;
+    </select>
+    <select id="selectRecordRoute" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.RecordDto">
+        SELECT dl.affiliation,DATE_FORMAT(dl.date,'%Y.%m.%d') AS date,dl.driv_doc,dl.driv_log,dl.real_time_id,dl.route_id,dl.station_name,dl.time
+        FROM driv_log dl
+        WHERE dl.affiliation=#{center_code} and dl.date like concat(#{selectYM},'%') and dl.route_id=#{route_id}
+        order by dl.driv_log asc;
+    </select>
+    
+    <!-- 차량일일점검표 -->
+    <select id="selectTeachCheckList" parameterType="com.test.rememberTest.Dto.Teach_bus_checkDto" resultType="com.test.rememberTest.Dto.Teach_bus_checkDto">
+        SELECT t.today,t.center_code,t.staff_id,t.teach_buslist_cont_order,t.teach_buslist_type_order,t.teach_check,DATE_FORMAT(t.teach_check_date,'%Y.%m.%d') AS checkDateAll ,t.teach_check_id, DATE_FORMAT(t.today,'%d') AS checkDateD 
+        FROM teach_bus_check t
+        WHERE t.center_code=#{center_code} and t.today like concat(#{checkDateYNM},'%') and t.route_id=#{route_id}
+        order by checkDateD asc, t.teach_buslist_type_order asc, t.teach_buslist_cont_order asc; 
+    </select>
+    
+    <select id="selectTeachCheckList2" parameterType="com.test.rememberTest.Dto.Teach_bus_checkDto" resultType="com.test.rememberTest.Dto.Teach_bus_checkDto">
+        SELECT t.today,t.center_code,t.staff_id,group_Concat(t.teach_buslist_cont_order) as group_cont_order,
+		t.teach_buslist_type_order,group_Concat(t.teach_check) as group_teach_check,DATE_FORMAT(t.teach_check_date,'%Y.%m.%d') AS checkDateAll 
+		,t.teach_check_id, group_Concat(DATE_FORMAT(t.today,'%d')) AS checkDateD  
+        FROM teach_bus_check t
+        WHERE t.center_code=#{center_code} and t.today like concat(#{checkDateYNM},'%') and t.route_id=#{route_id}
+        group by t.teach_buslist_type_order
+        order by checkDateD asc, t.teach_buslist_type_order asc, t.teach_buslist_cont_order asc; 
+    </select>
+    
+    
+    <select id="selectCheckListContentAll" parameterType="com.test.rememberTest.Dto.Teach_bus_checkDto" resultType="com.test.rememberTest.Dto.Teach_bus_checkDto">
+         SELECT * FROM teach_bus_ckecklist WHERE affiliation=#{center_code};
+    </select>
+    
+     <select id="getDetailCarInfo" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.Teach_bus_checkDto">
+        select r.route_id,b.bus_borad,DATE_FORMAT(b.bus_insur,'%Y.%m.%d') AS insurformat,
+		b.bus_num,r.main_staff_id,r.route_arrive,
+		r.route_name,r.route_start,r.sub_staff_id,staff.staff_name
+		from route r
+		left join bus b
+		on b.bus_id = r.bus_id 
+		join staff 
+		on b.staff_id = staff.staff_id
+        where r.route_id =#{route_id}
+    </select>
+    
+    <delete id="deleteDailyAllCheckList" parameterType="java.util.Map">
+        delete from bus_daily_check where today like concat(#{nowYNM},'%') and route_id=#{route_id};	
+    </delete>
+    
+    <delete id="deleteAllCheckList" parameterType="java.util.Map">
+        delete from teach_bus_check where today like concat(#{nowYNM},'%') and route_id=#{route_id};	
+    </delete>
+	<insert id="updateAllCheckList" parameterType="java.util.Map">
+<!-- 			INSERT INTO teach_bus_check (center_code, staff_id,teach_buslist_cont_order,teach_buslist_type_order,teach_check,teach_check_date,route_id,today) VALUES  		 -->
+<!-- 		<foreach collection="dtoList" item="item" index="index" separator="),(" open="(" close=");"> -->
+<!-- 	   	 	#{item.center_code}, #{item.staff_id},#{item.teach_buslist_cont_order},#{item.teach_buslist_type_order},#{item.teach_check},#{item.teach_check_date},#{item.route_id},'2018-01-23'	 	 -->
+<!-- 		</foreach>	   -->
+			INSERT INTO teach_bus_check (center_code, staff_id,teach_buslist_cont_order,teach_buslist_type_order,teach_check,teach_check_date,route_id,today)  
+			VALUES 
+			<foreach collection="dtoList" item="item" index="index" separator=",">
+		   	 	(#{item.center_code},#{item.staff_id},#{item.teach_buslist_cont_order},#{item.teach_buslist_type_order},#{item.teach_check},#{item.teach_check_date},#{item.route_id},#{item.today})
+			</foreach>	
+	</insert>
+	
+    <insert id="updateAllBusDailyCheck" parameterType="com.test.rememberTest.Dto.Teach_bus_checkDto">
+<!--         <foreach collection="dtoList" item="item" index="index" separator=";"> -->
+<!-- 			INSERT INTO teach_bus_check (center_code, staff_id,teach_buslist_cont_order,teach_buslist_type_order,teach_check,teach_check_date,route_id,today)  -->
+<!-- 			VALUES (#{item.center_code}, #{item.staff_id},#{item.teach_buslist_cont_order},#{item.teach_buslist_type_order},#{item.teach_check},#{item.teach_check_date},#{item.route_id},#{item.today})   -->
+<!-- 		</foreach> -->
+	</insert>
+    
+    
+    <select id="selectCheckistContent" parameterType="com.test.rememberTest.Dto.Teach_bus_checkDto" resultType="com.test.rememberTest.Dto.Teach_bus_checkDto">
+        SELECT * FROM teach_bus_ckecklist WHERE affiliation=#{center_code} and teach_buslist_type_order=#{chk};
+    </select>
+    <select id="selectDailyCheckInfo" parameterType="com.test.rememberTest.Dto.Teach_bus_checkDto" resultType="com.test.rememberTest.Dto.Teach_bus_checkDto">
+        SELECT bc.route_id,bc.bus_borad,DATE_FORMAT(bc.bus_insur,'%Y.%m.%d') AS insurformat,bc.bus_num,bc.bus_staff,bc.drive_mon,bc.drive_year,bc.main_staff_id,
+        bc.route_arrive,bc.route_id,bc.route_name,bc.route_start,bc.sub_staff_id,r.route_type
+        ,ifnull(bc.today,'-') as formatToday 
+        FROM bus_daily_check bc 
+        left join route r
+		on r.route_id = bc.route_id
+        WHERE bc.route_name=#{route_name} and bc.route_id=#{route_id} group by bc.route_name;
+    </select>
+    
+    
+    <!-- Center 등록하기 -->
+    <insert id="insertCenterCode" parameterType="com.test.rememberTest.Dto.CenterDto">
+		INSERT INTO center_code (admin_area, center_code)VALUES (#{admin_area},#{center_code});
+	</insert>
+	<insert id="insertCenter" parameterType="com.test.rememberTest.Dto.CenterDto">
+		INSERT INTO center (admin_area, center_code,center_name,center_repn,center_dirn,center_type,center_phon,center_addr,latitude,longitude,center_num)
+		VALUES (#{admin_area},#{center_code},#{center_name},#{center_repn},#{center_dirn},#{center_type},#{center_phon},#{center_addr},#{latitude},#{longitude},#{center_num});
+	</insert>
+	<!-- center 상세조회 -->
+	<select id="detailCenter" parameterType="com.test.rememberTest.Dto.CenterDto" resultType="com.test.rememberTest.Dto.CenterDto">
+		select admin_area, center_addr,center_adma,center_code,center_dest,center_dirn,
+		center_eval,center_name,center_open,center_otim,
+		ifnull(if(center_pho='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',center_pho),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as center_pho,
+		center_phon,center_repn,center_type,center_web,createtime,latitude,longitude,updatetime
+		from center where center_code=#{center_code}
+	</select>
+	<!-- center 수정 -->
+	<update id="UpdateCenter" parameterType="com.test.rememberTest.Dto.CenterDto">
+		update center set
+		center_name=#{center_name}, center_repn=#{center_repn}, center_dirn=#{center_dirn},
+		center_type=#{center_type}, center_dest=#{center_dest}, center_open=#{center_open},
+		center_adma=#{center_adma}, center_web=#{center_web}, center_otim=#{center_otim},
+		center_addr=#{center_addr}, center_eval=#{center_eval}, latitude=#{latitude}, longitude=#{longitude},
+		center_pho=#{center_pho}
+		where center_code=#{center_code}
+	</update>
+	
+	<select id="selectCenterCode" parameterType="com.test.rememberTest.Dto.StaffDto" resultType="com.test.rememberTest.Dto.StaffDto">
+		select * from staff where staff_id=#{name}
+	</select>
+	
+	<!-- Class 등록하기 -->
+    <insert id="addClass" parameterType="com.test.rememberTest.Dto.ClassDto">
+		INSERT INTO class (class_id, staff_id_1,staff_id_2,class_name,class_year,class_sem,center_code)
+		VALUES (#{class_id},#{staff_id_1},#{staff_id_2},#{class_name},#{class_year},#{class_sem},#{center_code});
+	</insert>
+	
+	
+	<!-- staff 등록하기 -원장 -->
+    <insert id="insertStaff" parameterType="com.test.rememberTest.Dto.CenterDto">
+		INSERT INTO staff (center_code,staff_id,staff_pw,staff_name,staff_phone,staff_email,staff_position,staff_type,admin_area)
+		VALUES (#{center_code},#{staff_id},#{staff_pw},#{staff_name},#{staff_phone},#{staff_email},#{staff_position},#{staff_type},#{admin_area});
+	</insert>
+	
+	<!-- staff 권한 -->
+    <insert id="insertStaffRoles" parameterType="com.test.rememberTest.Dto.StaffDto">
+		INSERT INTO user_roles (center_code,staff_id,role)
+		VALUES (#{center_code},#{staff_id}, #{role});
+	</insert>
+	<!-- staff 권한 List -->
+	<insert id="insertStaffRoles_List" parameterType="com.test.rememberTest.Dto.StaffDto">
+		INSERT INTO user_roles (center_code,staff_id,role) VALUES 
+		<foreach collection="dtoList" item="item" index="index" separator="),(" open="(" close=");">
+			#{item.center_code},#{item.staff_id}, #{item.role}
+		</foreach>
+	</insert>
+	
+	<!-- staff 등록하기 -교직원 -->
+    <insert id="insertAllStaff" parameterType="com.test.rememberTest.Dto.StaffDto">
+		INSERT INTO staff (center_code,staff_id,staff_pw,staff_name,staff_phone,staff_position,admin_area,staff_type,registrant,staff_email,staff_phot) VALUES 
+			(#{center_code},#{staff_id},#{staff_pw},#{staff_name},#{staff_phone},#{staff_position},#{admin_area},#{staff_type},#{registrant},#{staff_email},#{staff_phot})
+	</insert>
+	
+	<!-- staff 업데이트하기 -교직원 -->
+	<update id="allStaffUpdate" parameterType="com.test.rememberTest.Dto.StaffDto">
+       		
+        <foreach collection="dtoList" item="item" index="index" separator=";">
+        	update staff set
+        	
+			staff_name=#{item.staff_name},
+	        staff_phone=#{item.staff_phone},
+	        staff_position=#{item.staff_position},
+	        staff_type=#{item.staff_type},
+	        staff_email=#{item.staff_email},
+	        registrant=#{item.registrant}
+	        
+	        where center_code=#{item.center_code} and
+			staff_id=#{item.staff_id}
+		</foreach>
+		
+		
+	</update>
+	<!-- staff 권한 업데이트하기 -교직원 -->
+	<update id="updateStaffRoles" parameterType="com.test.rememberTest.Dto.StaffDto">
+		<foreach collection="dtoList"  item="item" index="index" separator=";">
+			update user_roles set
+			center_code=#{item.center_code},
+			staff_id=#{item.staff_id}, 
+			role=#{item.role}
+			
+			where center_code=#{item.center_code} and
+			staff_id=#{item.staff_id}
+		</foreach>
+	</update>
+	<!-- staff비밀번호 -->
+	<update id="changePassWord" parameterType="com.test.rememberTest.Dto.StaffDto">
+		update staff set
+		staff_pw=#{staff_pw}
+		where center_code=#{center_code} and
+		staff_id=#{staff_id}
+	</update>
+	
+	<!-- staff탈퇴 -->
+	<update id="signOut" parameterType="com.test.rememberTest.Dto.StaffDto">
+		update staff set
+		staff_name=#{staff_name}
+		where center_code=#{center_code} and
+		staff_id=#{staff_id}
+	</update>
+	
+	<!-- 내 정보 -->
+	<select id="selectStaffIdCheck" parameterType="com.test.rememberTest.Dto.StaffDto" resultType="com.test.rememberTest.Dto.StaffDto">
+        SELECT *  FROM staff  WHERE staff_id=#{staffId_chk}
+    </select>
+	
+	
+	
+	<!-- staff id check -교직원 -->
+	<select id="selectDetailInfo" parameterType="com.test.rememberTest.Dto.StaffDto" resultType="com.test.rememberTest.Dto.StaffDto">
+        SELECT staff.admin_area,staff.center_code,staff.registrant,staff.staff_charge,staff.staff_email,
+        staff.staff_id,staff.staff_name,staff.staff_phone,staff.staff_position,staff.staff_pw,
+        staff.staff_type,staff.updatetime,staff.createtime,
+        ifnull(if(staff.staff_phot='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',staff.staff_phot),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as staff_phot, 
+        ifnull(class.class_name,'-') as class_name
+        FROM staff  
+        left join class
+		on class.center_code = staff.center_code AND class.staff_id_1 = staff.staff_id 
+		or class.center_code = staff.center_code AND class.staff_id_2 = staff.staff_id
+        WHERE staff.center_code=#{center_code} and staff.staff_id=#{staff_id}
+    </select>
+    
+    <!-- staff PW check -교직원 -->
+	<select id="checkPassWord" parameterType="com.test.rememberTest.Dto.StaffDto" resultType="com.test.rememberTest.Dto.StaffDto">
+        SELECT *  FROM staff  WHERE staff_id=#{staff_id} and staff_pw=#{staff_pw};
+    </select>
+    
+    <!-- staff id찾기 -교직원 -->
+	<select id="findStaffId" parameterType="com.test.rememberTest.Dto.StaffDto" resultType="com.test.rememberTest.Dto.StaffDto">
+        SELECT staff_id  FROM staff  WHERE staff_name=#{staff_name} and staff_phone=#{staff_phone};
+    </select>
+    
+    <!-- staff id찾기 -교직원 -->
+	<select id="findStaffPw" parameterType="com.test.rememberTest.Dto.StaffDto" resultType="com.test.rememberTest.Dto.StaffDto">
+        SELECT staff_pw  FROM staff  WHERE staff_id=#{staff_id} and staff_name=#{staff_name} and staff_phone=#{staff_phone};
+    </select>
+    <!-- staff 반 배정 체크 -->
+    <select id="getChkStaff" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.StaffDto">
+        <choose>
+        	<when test="chk==1">
+        		SELECT staff_id_1 FROM class  WHERE center_code=#{center_code} and class_sem=#{sem};		
+        	</when>
+        	<otherwise>
+        		SELECT staff_id_2 FROM class  WHERE center_code=#{center_code} and class_sem=#{sem};
+        	</otherwise>
+        </choose>
+    </select>
+    
+    <update id="deleteStaff" parameterType="java.util.Map" >
+		update staff SET
+		staff_name=#{staff_name}
+		where staff_id=#{staff_id} and center_code =#{center_code};  	
+	</update> 
+	
+<!-- 	<update id="deleteStaff" parameterType="java.util.Map" > -->
+<!-- 		update staff SET -->
+<!-- 		staff_name=#{staff_name} -->
+<!-- 		where staff_id=#{staff_id} and center_code =#{center_code};  	 -->
+<!-- 	</update>  -->
+    
+    
+    <!-- staff 수정 -교직원 -->
+    <update id="updateStaffInfo" parameterType="java.util.Map" >
+		update staff SET
+			  staff_name=#{staff_name},
+			  staff_phone=#{staff_phone},
+			  staff_position=#{staff_position},
+			  staff_email=#{staff_email},
+			  staff_phot=#{staff_phot}
+			where staff_id=#{staff_id};  	
+	</update> 
+	
+	<!-- staff -교직원 상세 정보 -->
+	<select id="selectStaffInfo" parameterType="com.test.rememberTest.Dto.StaffDto" resultType="com.test.rememberTest.Dto.StaffDto">
+        SELECT staff.admin_area,staff.center_code,staff.registrant,staff.staff_charge,staff.staff_email,
+        staff.staff_id,staff.staff_name,staff.staff_phone,staff.staff_position,staff.staff_pw,
+        ifnull(class.class_id,'-') as class_id,
+        ifnull(class.class_name,'-') as class_name,
+		staff.staff_type,staff.updatetime,staff.createtime,
+        ifnull(if(staff.staff_phot='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',staff.staff_phot),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as staff_phot
+        FROM staff  
+        left join class
+		on class.center_code = staff.center_code AND (class.staff_id_1 = staff.staff_id or class.center_code = staff.center_code AND class.staff_id_2 = staff.staff_id)
+		WHERE staff.staff_id=#{staff_id} and staff.center_code=#{center_code}
+    </select>
+    
+    <!-- BeaconList -->
+    <select id="BeaconList" parameterType="com.test.rememberTest.Dto.BeaconDto" resultType="com.test.rememberTest.Dto.BeaconDto">
+        SELECT beacon.beacon_id, ifnull(beacon.kid_system_code,'-') as kid_system_code,  
+        ifnull(if(beacon_phot='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',beacon_phot),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as beacon_phot,
+         beacon.beacon_use, beacon.beacon_stat, beacon.createtime,beacon.staff_id 
+        ,staff.staff_name
+		FROM beacon  
+		left join staff
+		on staff.staff_id = beacon.staff_id WHERE beacon.center_code=#{center_code}
+		ORDER BY beacon.beacon_id ASC;
+    </select>
+    
+    <!-- BeaconList -->
+    <select id="matchingBeaconList" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.BeaconDto">
+        SELECT beacon_id,
+         ifnull(if(beacon_phot='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',beacon_phot),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as beacon_phot
+		FROM beacon  
+		WHERE center_code=#{center_code} and beacon.kid_system_code is null
+		ORDER BY beacon.beacon_id ASC;
+    </select>
+    
+   	
+	<!-- staff 업데이트하기 -교직원 -->
+	<update id="updateMatching" parameterType="java.util.Map">
+        <foreach collection="dtoList" item="item" index="index" separator=";">
+			<if test="item.beacon_id!=''">
+				update beacon 
+				<set>
+					kid_system_code=#{item.kid_system_code},
+					beacon_use="원아배정"
+				</set>
+				<where>
+					beacon_id=#{item.beacon_id}
+				</where>      
+			</if>	
+		</foreach>
+	</update>
+	
+    <update id="cutMatching" parameterType="java.util.Map">
+    	<foreach collection="dtoList" item="item" index="index" separator=";">
+        	<if test="item.chk !=''">
+        		update beacon set kid_system_code=null
+        		beacon_use="보관"
+        		beacon_id=#{item.beacon_id}
+        	</if>
+		</foreach>
+        		
+	</update>
+	
+	<update id="getCutMatching" parameterType="java.util.Map">
+       		update beacon set
+			kid_system_code=null,
+			beacon_use="보관"
+			where
+        <foreach collection="dtoList" item="item" index="index" separator=" or " close=";">
+	        <if test="item.chk=='true'">
+	        	(beacon_id=#{item.beacon_id})
+	        </if>
+		</foreach>
+	</update>
+	
+	<update id="autoMatching" parameterType="java.util.Map">
+        <foreach collection="dtoList" item="item" index="index">
+        	update beacon set 
+        	kid_system_code=#{item.kid_system_code},
+        	beacon_use="원아배정",
+        	beacon_id=#{item.beacon_id}
+        	where beacon_id=#{item.beacon_id};
+		</foreach>
+	</update>
+		
+    <!-- BeaconDetail -->
+    <select id="DetailBeacon" parameterType="com.test.rememberTest.Dto.BeaconDto" resultType="com.test.rememberTest.Dto.BeaconDto">
+        SELECT beacon.beacon_com,beacon.beacon_id,beacon.beacon_mac,beacon.beacon_major,beacon.beacon_minor,
+        ifnull(if(beacon_phot='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',beacon_phot),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as beacon_phot,
+        beacon.beacon_stat,beacon.beacon_use,beacon.beacon_uuid,beacon.center_code,beacon.createtime,
+        beacon.kid_system_code,beacon.staff_id,beacon.updatetime,
+        staff.staff_name,kid.kid_name,kid.kid_system_code
+		FROM beacon  
+		left join staff
+		on staff.staff_id = beacon.staff_id
+		left join kid
+		on kid.kid_system_code = beacon.kid_system_code
+		WHERE beacon.center_code=#{center_code} and beacon.beacon_id=#{beacon_id}
+		ORDER BY beacon.beacon_id ASC;
+    </select>
+    
+    <update id="UpdateBeancon" parameterType="com.test.rememberTest.Dto.BeaconDto" >
+		update beacon SET
+			  staff_id=#{staff_id},
+			  beacon_stat=#{beacon_stat},
+			  beacon_use=#{beacon_use},
+			  beacon_phot=#{beacon_phot}
+			where beacon_id=#{beacon_id} and center_code=#{center_code};  	
+	</update> 
+	<!-- 반 삭제 -->
+    <delete id="DeleteEquipment" parameterType="java.util.Map">
+
+		  <foreach collection="dtoList" item="item" index="index" separator=";">
+        	delete from equipment where equipment_id =#{item.equipment_id}   	
+		</foreach>
+		
+    </delete>
+    
+    <!-- EquipmentSearch -->
+    <select id="equipmentSearch" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.EquipmentDto">
+        SELECT equipment.equipment_id,equipment.equipment_type,equipment.equipment_name,equipment.equipment_com,equipment.equipment_use,equipment.equipment_stat,staff.staff_name,equipment.equipment_install_man,DATE_FORMAT(equipment.equipment_install_date,'%Y.%m.%d') AS INSTALLDATEFORMAT ,ifnull(equipment.equipment_install_loc,'-') as equipment_install_loc 
+		FROM equipment  
+		left join staff
+		on staff.staff_id = equipment.staff_id 
+		WHERE  
+		(equipment.equipment_id like CONCAT('%',#{keyWord},'%') ||
+		equipment.equipment_com like CONCAT('%',#{keyWord},'%') ||
+		equipment.equipment_stat like CONCAT('%',#{keyWord},'%') ||
+		staff.staff_name like CONCAT('%',#{keyWord},'%') ||
+		equipment.equipment_use like CONCAT('%',#{keyWord},'%')) and
+		equipment.center_code=#{center_code} and 
+		equipment.equipment_type=#{equipment_type} 
+		ORDER BY equipment.equipment_name ASC;
+    </select>
+    
+    
+	<!-- GateWayList -->
+    <select id="GateWayList" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.EquipmentDto">
+        SELECT equipment.equipment_id,equipment.equipment_type,equipment.equipment_name,equipment.equipment_com,equipment.equipment_use,equipment.equipment_stat,staff.staff_name,equipment.equipment_install_man,DATE_FORMAT(equipment.equipment_install_date,'%Y.%m.%d') AS INSTALLDATEFORMAT ,ifnull(equipment.equipment_install_loc,'-') as equipment_install_loc 
+		FROM equipment  
+		left join staff
+		on staff.staff_id = equipment.staff_id WHERE equipment.center_code=#{center_code} and equipment_type='게이트웨이'
+		ORDER BY equipment.equipment_name ASC;
+    </select>
+    
+    <!-- TabletList -->
+    <select id="TabletList" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.EquipmentDto">
+        SELECT equipment.equipment_id,equipment.equipment_type,equipment.equipment_name,equipment.equipment_com,equipment.equipment_use,equipment.equipment_stat,staff.staff_name,equipment.equipment_install_man,DATE_FORMAT(equipment.equipment_install_date,'%Y.%m.%d') AS INSTALLDATEFORMAT ,ifnull(equipment.equipment_install_loc,'-') as equipment_install_loc
+		FROM equipment  
+		left join staff
+		on staff.staff_id = equipment.staff_id WHERE equipment.center_code=#{center_code} and equipment_type='테블릿'
+		ORDER BY equipment.equipment_id ASC;
+    </select>
+    
+    <!-- TabletDetail -->
+    <select id="DetailTablet" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.EquipmentDto">
+		SELECT equipment.equipment_id, equipment.equipment_type, equipment.equipment_name, equipment.equipment_com, 
+		ifnull(if(equipment.equipment_install='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',equipment.equipment_install),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as equipment_install, 
+		equipment.equipment_use, equipment.equipment_stat,
+		DATE_FORMAT(equipment.equipment_install_date,'%Y-%m-%d') AS INSTALLDATEFORMAT, equipment.equipment_install_loc, equipment.equipment_install_man, equipment.center_code, equipment.staff_id,
+		DATE_FORMAT(equipment.createtime,'%Y-%m-%d') AS CREATEDATEFORMAT,DATE_FORMAT(equipment.updatetime,'%Y-%m-%d') AS UPDATEDATEFORMAT,equipment.install_place, equipment.admin_area,staff.staff_name
+		,bus.bus_id,bus.bus_name
+		FROM equipment  
+		left join staff
+		on staff.staff_id = equipment.staff_id
+		left join bus
+    	on bus.equipment_gate_id = equipment.equipment_id or bus.equipment_tablet_id = equipment.equipment_id 
+		WHERE equipment.center_code=#{center_code} and equipment.equipment_id=#{equipment_id}
+		ORDER BY equipment.equipment_name ASC; 
+    </select>
+    
+    <update id="UpdateEquipment" parameterType="com.test.rememberTest.Dto.EquipmentDto" >
+		update equipment SET
+			equipment_use=#{equipment_use},
+			staff_id=#{staff_id},
+			equipment_stat=#{equipment_stat},
+			equipment_install=#{equipment_install}
+			where equipment_type=#{equipment_type} and equipment_id=#{equipment_id} and center_code=#{center_code};  	
+	</update> 
+    
+    <!-- gateWay 수정 할 때 차량에 설치된 게이트웨이도 바뀌게 두번 수정하기 -->
+    <update id="installEquipmentUpdate" parameterType="com.test.rememberTest.Dto.EquipmentDto" >
+		UPDATE equipment set
+        	equipment.equipment_install_loc=#{equipment_install_loc},
+			equipment.equipment_install=#{equipment_install},
+			equipment.equipment_install_man=#{equipment_install_man},
+			equipment.equipment_install_date=#{equipment_install_date},
+			equipment.equipment_use="시설배정"
+        where equipment.equipment_id=#{equipment_id};	
+	</update> 
+	<update id="busEquipmentUpdate" parameterType="com.test.rememberTest.Dto.EquipmentDto" >
+        update bus set 
+        bus.equipment_gate_id = #{equipment_id} 
+        where bus.bus_name = #{equipment_install_loc};
+	</update> 
+	<update id="busEquipmentUpdateT" parameterType="com.test.rememberTest.Dto.EquipmentDto" >
+        update bus set 
+        	bus.equipment_tablet_id = #{equipment_id} 
+        where bus.bus_name = #{equipment_install_loc};
+	</update> 
+	
+    <insert id="insertDamegeGoods" parameterType="com.test.rememberTest.Dto.Damege_goodsDto" >
+    	INSERT INTO damage_goods (center_code,damege_photo,damege_reason,damege_type,staff_id) 
+		VALUES(#{center_code},#{damege_photo},#{damege_reason},#{damege_type},#{staff_id});
+    </insert>
+    <select id="allDamegeGoodsList" parameterType="java.util.Map"  resultType="com.test.rememberTest.Dto.Damege_goodsDto">
+    	select damage_goods.*,staff.staff_name
+   		FROM damage_goods 
+   		left join staff
+  		on staff.staff_id=damage_goods.staff_id
+   		where damage_goods.center_code=#{center_code} 
+   		ORDER BY damage_goods.damege_id ASC;
+    </select>
+    <select id="damegeGoodsDetail" parameterType="java.util.Map"  resultType="com.test.rememberTest.Dto.Damege_goodsDto">
+    	select damage_goods.*,staff.staff_name
+   		FROM damage_goods 
+   		left join staff
+  		on staff.staff_id=damage_goods.staff_id
+   		where damage_goods.damege_type=#{equipment_id};
+    </select>
+    <!-- damegeGoodsSeach -->
+    <select id="damageSearch" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.Damege_goodsDto">
+    	select d.*,staff.staff_name
+   		FROM damage_goods d
+   		left join staff
+  		on staff.staff_id=d.staff_id
+   		where d.center_code=#{center_code} and
+   		(d.beacon_id like CONCAT('%',#{keyWord},'%') ||
+		d.damege_type like CONCAT('%',#{keyWord},'%') ||
+		d.damege_reason like CONCAT('%',#{keyWord},'%') ||
+		staff.staff_name like CONCAT('%',#{keyWord},'%'))
+   		ORDER BY d.damege_id ASC;
+    </select>
+    
+    
+    <!-- 원아 리스트 -->
+    <select id="KidsListInClass" parameterType="java.util.Map"  resultType="com.test.rememberTest.Dto.KidDto">
+    	select k.kid_birthday,k.center_code,k.class_id,k.kid_addr,k.kid_blood, DATE_FORMAT(k.kid_enter,'%Y-%m-%d') AS kid_enter,
+      	k.kid_name,ifnull(if(k.kid_pho='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',k.kid_pho),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as kid_pho,
+       	DATE_FORMAT(k.kid_retire,'%Y-%m-%d') AS kid_retire_r,k.kid_sex,
+      	k.kid_system_code,k.latitude,k.longitude,k.par_id,k.staff_id,class.class_name
+   		FROM kid k
+   		left join class
+		on class.class_id = k.class_id
+   		where k.center_code=#{center_code} and class.class_id =#{class_id}
+   		ORDER BY k.kid_name ASC;
+    </select>
+    
+    <delete id="DeleteKid" parameterType="java.util.Map">
+		delete from kid where center_code = #{center_code} and kid_system_code = #{kid_system_code}
+	</delete> <!-- 차량 정보 삭제 -->
+	
+	<!-- 원아 상세 정보 -->
+    <select id="getParentList" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.KidDto">
+        select p.*,k.kid_name, k.kid_system_code, k.kid_sex,pk.check_stater
+		from parent p
+		left join parent_and_kid pk
+		on p.par_id = pk.par_id
+		left join kid k
+		ON k.kid_system_code = pk.kid_system_code 
+		AND k.center_code = pk.center_code
+		where pk.check_stater ='승인'
+		and p.center_code = #{center_code} 
+		order by k.kid_name asc;
+    </select>
+    
+    <!-- 원아 상세 정보 -->
+    <select id="KidInfo" parameterType="com.test.rememberTest.Dto.KidDto" resultType="com.test.rememberTest.Dto.KidDto">
+        SELECT kid.staff_id,kid.createtime,kid.updatetime,kid.center_code,kid.class_id,kid.latitude,kid.longitude,
+        ifnull(if(kid.kid_pho='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',kid.kid_pho),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as kid_pho,
+        parent_and_kid.par_id,parent.par_name,class.class_name,
+        kid.kid_blood,kid.kid_birthday,kid.kid_addr,kid.kid_system_code,kid.kid_name,kid.kid_sex,
+        DATE_FORMAT(kid.kid_enter,'%Y.%m.%d') AS kid_enter,
+        DATE_FORMAT(kid.kid_retire,'%Y.%m.%d') as kid_retire_r
+		FROM kid  
+		left join class
+		on class.class_id = kid.class_id
+		left join parent_and_kid
+		on parent_and_kid.kid_system_code =kid.kid_system_code
+		left join parent
+		on parent_and_kid.par_id = parent.par_id
+		where kid.center_code = #{center_code}
+		and kid.kid_system_code =#{kid_system_code};
+    </select>
+    
+    <!-- 원아 리스트 -->
+    <select id="AllKidsList" parameterType="com.test.rememberTest.Dto.KidDto" resultType="com.test.rememberTest.Dto.KidDto">
+      SELECT kid.*,parent_and_kid.par_id,parent.par_name,class.class_name
+		FROM kid  
+		left join class
+		on class.class_id = kid.class_id
+		left join parent_and_kid
+		on parent_and_kid.kid_system_code =kid.kid_system_code
+		left join parent
+		on parent_and_kid.par_id = parent.par_id
+		where kid.center_code = #{center_code}
+		group by kid.kid_name
+		ORDER BY kid.kid_name ASC;
+    </select>
+    
+    <update id="updateRepreParentId" parameterType="java.util.Map">
+		update kid set
+        par_id=#{par_id}
+        where kid_system_code=#{kid_system_code} ; 		
+	</update>
+	
+    <select id="KidsInfo" resultType="com.test.rememberTest.Dto.KidDto" parameterType="java.util.Map">
+    	select k.kid_birthday,k.center_code,k.class_id,k.kid_addr,k.kid_blood, DATE_FORMAT(k.kid_enter,'%Y-%m-%d') AS kid_enter,
+      k.kid_name,k.kid_pho, DATE_FORMAT(k.kid_retire,'%Y-%m-%d') AS kid_retire_r,k.kid_sex,
+      k.kid_system_code,k.latitude,k.longitude,k.par_id,k.staff_id
+      ,c.class_name,c.class_id
+   		FROM kid k
+   		left join class c
+		on c.class_id = k.class_id
+   		where k.center_code=#{center_code} and k.kid_system_code = #{kid_system_code};
+  	</select>   <!-- 원아 max값 확인 -->
+	
+	<select id="MaxKid_code" resultType="com.test.rememberTest.Dto.KidDto" parameterType="java.util.Map">
+   		select IFNULL(LPAD(max(code_num)+1, 3, '0'),'001') AS maxcount 
+   		FROM system_code 
+   		where center_code=#{code} and code_type = 'K'; 
+  	</select>   <!-- 원아 max값 확인 -->
+  	
+  	<select id="MaxClass_id" resultType="com.test.rememberTest.Dto.ClassDto" parameterType="java.util.Map">
+   		select IFNULL(LPAD(max(code_num)+1, 2, '0'),'01') AS maxcount 
+   		FROM system_code 
+   		where center_code=#{code} and code_type = 'C0'; 
+  	</select>   <!-- Class max값 확인 -->
+  	
+  	<select id="allClassList" resultType="com.test.rememberTest.Dto.ClassDto" parameterType="java.util.Map">
+   		select DISTINCT class.*,(select count(*) from kid where kid.class_id = class.class_id) as cnt_kid,(select staff_name from staff where class.staff_id_1 = staff.staff_id) as staff_name_1
+  		,(select staff_name from staff where class.staff_id_2 = staff.staff_id) as staff_name_2
+  		from class
+		where class.center_code=#{center_code}
+		ORDER BY class.class_name ASC;
+  	</select>   <!-- Class max값 확인 -->
+  	
+  	
+  	
+  	
+  	
+  	<!-- kid 등록하기  -->
+    <insert id="insertKidsInfo" parameterType="com.test.rememberTest.Dto.KidDto">
+		INSERT INTO kid (kid_system_code,kid_name,kid_sex,kid_enter,kid_retire,kid_blood,kid_addr,staff_id,center_code,class_id,latitude,longitude,kid_birthday,kid_pho) 
+		VALUES(#{kid_system_code},#{kid_name},#{kid_sex},#{kid_enter},#{kid_retire_r},#{kid_blood},#{kid_addr},#{staff_id},#{center_code},#{class_id},#{latitude},#{longitude},#{kid_birthday},#{kid_pho})
+	</insert>
+	
+	<update id="UpdateKidsInfo" parameterType="com.test.rememberTest.Dto.KidDto">
+		update kid set
+        kid_name=#{kid_name},kid_sex=#{kid_sex},kid_enter=#{kid_enter},
+        kid_blood=#{kid_blood},kid_addr=#{kid_addr},staff_id=#{staff_id},class_id=#{class_id},
+        latitude=#{latitude},longitude=#{longitude},kid_birthday=#{kid_birthday},
+        kid_pho=#{kid_pho},
+        <if test="kid_retire_r != null">
+        	kid_retire=#{kid_retire_r}
+        </if>        
+        where kid_system_code=#{kid_system_code} ; 		
+	</update>
+	
+	<!-- 반별 원아 리스트 -->
+  	
+  	
+  	<!-- 학부모 리스트 -->
+  	<select id="AllParentList" parameterType="com.test.rememberTest.Dto.ParentDto" resultType="com.test.rememberTest.Dto.ParentDto">
+       SELECT parent.*,parent_and_kid.check_stater,ifnull(kid.kid_name,'-') as kid_name,kid.kid_system_code 
+		FROM parent  
+		left join parent_and_kid
+		on parent_and_kid.par_id = parent.par_id
+		left join kid
+		on kid.kid_system_code = parent_and_kid.kid_system_code
+		WHERE parent.center_code=#{center_code}  
+		and  parent_and_kid.check_stater !="거절"
+    	and parent_and_kid.kid_system_code is not null
+    	and  parent_and_kid.check_stater!=''
+		ORDER BY parent.par_name ASC	;
+    </select>
+    
+    <!-- 학부모 리스트 정렬-->
+  	<select id="getAllParent_sort" parameterType="com.test.rememberTest.Dto.ParentDto" resultType="com.test.rememberTest.Dto.ParentDto">
+       SELECT parent.*,parent_and_kid.check_stater,ifnull(kid.kid_name,'-') as kid_name,kid.kid_system_code 
+		FROM parent  
+		left join parent_and_kid
+		on parent_and_kid.par_id = parent.par_id
+		left join kid
+		on kid.kid_system_code = parent_and_kid.kid_system_code
+		WHERE parent.center_code=#{center_code}  
+		and  parent_and_kid.check_stater !="거절"
+    	and parent_and_kid.kid_system_code is not null
+    	and  parent_and_kid.check_stater!=''
+		<choose>
+	        <when test="th_type==1">
+	        	<choose>
+	        		<when test="orderBy_type=='asc'">
+	        			ORDER BY parent.par_id ASC,kid.kid_name asc	
+	        		</when>
+	        		<otherwise>
+	        			ORDER BY parent.par_id desc,kid.kid_name asc
+	        		</otherwise>
+	        	</choose>
+	        </when>
+	        <when test="th_type==2">
+	        	<choose>
+	        		<when test="orderBy_type=='asc'">
+	        			ORDER BY parent.par_name ASC, kid.kid_name asc
+	        		</when>
+	        		<otherwise>
+	        			ORDER BY parent.par_name desc, kid.kid_name asc
+	        		</otherwise>
+	        	</choose>
+	        </when>
+	        <when test="th_type==3">
+	        	<choose>
+	        		<when test="orderBy_type=='asc'">
+	        			ORDER BY kid.kid_name asc , parent.par_name asc
+	        		</when>
+	        		<otherwise>
+	        			ORDER BY kid.kid_name desc , parent.par_name asc
+	        		</otherwise>
+	        	</choose>
+	        </when>
+	    </choose>
+    
+    </select>
+    
+    <select id="getKidsParent" parameterType="com.test.rememberTest.Dto.ParentDto" resultType="com.test.rememberTest.Dto.ParentDto">
+       select parent.par_name, parent.par_id, parent.center_code, parent.par_type,
+		parent.par_phone, parent.par_email,
+		kid.kid_system_code, kid.kid_sex, kid.kid_name
+		from parent
+		left join parent_and_kid
+		on parent.par_id = parent_and_kid.par_id
+		left join kid 
+		ON kid.kid_system_code = parent_and_kid.kid_system_code 
+		AND kid.center_code = parent_and_kid.center_code
+		where parent.center_code =#{center_code} 
+		and parent_and_kid.kid_system_code = #{kidCode};
+    </select>
+    
+    <update id="updateStater" parameterType="com.test.rememberTest.Dto.KidDto">
+		update parent_and_kid set
+        check_stater=#{check_stater}
+        where kid_system_code=#{kid_system_code}
+        and center_code=#{center_code}
+        and par_id=#{par_id}; 		
+	</update>
+  	
+	<!-- Class List -->
+	<select id="selectAllClassList" parameterType="com.test.rememberTest.Dto.StaffDto" resultType="com.test.rememberTest.Dto.StaffDto">
+        SELECT *  FROM class  WHERE center_code=#{center_code}  ORDER BY class.class_name ASC	;
+    </select>
+    
+    <!-- Detail Class List -->
+	<select id="detailClass" parameterType="com.test.rememberTest.Dto.ClassDto" resultType="com.test.rememberTest.Dto.ClassDto">
+        select class.*,(select staff_name from staff where class.staff_id_1 = staff.staff_id) as staff_name_1
+  ,(select staff_name from staff where class.staff_id_2 = staff.staff_id) as staff_name_2
+		  from class
+		  where class.center_code=#{center_code} and class.class_id=#{class_id};
+    </select>
+    <!-- 반 삭제 -->
+    <delete id="deleteClass" parameterType="com.test.rememberTest.Dto.ClassDto">
+        delete from class where class_id=#{class_id} and center_code=#{center_code};
+    </delete>
+    <!-- 반 검색 -->
+    <select id="searchClass"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.ClassDto">
+        SELECT DISTINCT class.*,(select count(*) from kid where kid.class_id = class.class_id) as cnt_kid,(select staff_name from staff where class.staff_id_1 = staff.staff_id) as staff_name_1,
+     (select staff_name from staff where class.staff_id_2 = staff.staff_id) as staff_name_2
+     FROM class
+     left join staff
+     on staff.staff_id = class.staff_id_1 or staff.staff_id = class.staff_id_2
+     where (staff.staff_name like CONCAT('%',#{keyWord},'%') ||
+           class.class_id like CONCAT('%',#{keyWord},'%') ||
+           class.class_sem like CONCAT('%',#{keyWord},'%') ||
+           class.class_year like CONCAT('%',#{keyWord},'%') ||
+           class.class_name like CONCAT('%',#{keyWord},'%')) and class.center_code=#{center_code} ORDER BY class.class_name ASC;
+    </select>
+    <!-- 반 검색 -->
+    <select id="selectKidAge"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.ClassDto">
+        SELECT class_year FROM class GROUP BY class_year;
+    </select>
+    <!-- 반 수정 -->
+    <update id="updateClass" parameterType="com.test.rememberTest.Dto.ClassDto">
+		update class set
+        staff_id_1=#{staff_id_1},staff_id_2=#{staff_id_2},
+        class_name=#{class_name},class_year=#{class_year},class_sem=#{class_sem}
+        where center_code=#{center_code} and class_id=#{class_id} ; 		
+	</update>
+	
+	<!-- 반 수정 -->
+    <update id="updateChangeStaffInClass" parameterType="com.test.rememberTest.Dto.ClassDto">
+		update class set
+        staff_id_1=#{staff_id_1}
+        where center_code=#{center_code} and class_id=#{class_id} ; 		
+	</update>
+	<update id="updateChangeStaffInClass2" parameterType="com.test.rememberTest.Dto.ClassDto">
+		update class set
+        staff_id_2=#{staff_id_2}
+        where center_code=#{center_code} and class_id=#{class_id} ; 		
+	</update>
+    
+    <!-- Detail Kids List In Class  -->
+    <select id="allClassKidsList" parameterType="com.test.rememberTest.Dto.KidDto" resultType="com.test.rememberTest.Dto.KidDto">
+         select class.class_id,class.class_name,kid.kid_name,
+         ifnull(if(kid.kid_pho='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',kid.kid_pho),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as kid_pho
+         ,kid.kid_system_code
+		  from class
+		  left join kid
+		  on kid.class_id = class.class_id
+		  where class.center_code=#{center_code} and class.class_id=#{class_id} Order by kid.kid_name asc;
+    </select>
+    
+    <select id="MatchingKids" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.KidDto">
+         select kid.kid_system_code,kid.kid_name,ifnull(kid.kid_pho,'images/image_ujacar_290x290.png') as kid_pho 
+		  from kid
+		  left join class
+		  on class.class_id = kid.class_id
+		  left join beacon
+      	  on beacon.kid_system_code = kid.kid_system_code AND beacon.center_code = kid.center_code
+      	  <choose>
+      	  	<when test="class_id!=null and keyword!=null">
+      	  		where kid.center_code=#{center_code} 
+			  	and class.class_id=#{class_id}
+			  	and kid.kid_name like concat('%',#{keyword},'%') 
+			  	and beacon.kid_system_code is null
+			  	Order by kid.kid_name asc
+      	  	</when>
+      	  	<when test="class_id==null and keyword!=null">
+		 		where kid.center_code=#{center_code} a
+			  	nd kid.kid_name like concat('%',#{keyword},'%') a
+			  	nd beacon.kid_system_code is null
+			  	Order by kid.kid_name asc
+		 	</when>
+		 	<otherwise>
+		 		where kid.center_code=#{center_code} 
+			  	and class.class_id=#{class_id}
+			  	and beacon.kid_system_code is null
+			  	Order by kid.kid_name asc
+		 	</otherwise>
+      	  </choose>
+		 		
+    </select>
+    
+    <select id="notMatchingCount" resultType="com.test.rememberTest.Dto.KidDto" parameterType="java.util.Map" >
+    	select count(beacon.beacon_id) as beaconCnt,
+		  (select count(kid.kid_system_code) 
+		    from kid 
+		    where kid.center_code=#{center_code})as totalKidsCnt ,
+		  (select count(beacon.beacon_id) 
+		    from beacon 
+		    where beacon.center_code=#{center_code})as totalBeaconCnt 
+		from beacon 
+		left join kid 
+		ON kid.kid_system_code = beacon.kid_system_code AND kid.center_code = beacon.center_code 
+		where beacon.center_code =#{center_code} and beacon.kid_system_code = kid.kid_system_code; 
+    </select>
+    
+    <select id="BeaconCondition" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.BeaconDto">
+         select kid.kid_system_code,kid.kid_name,ifnull(kid.kid_pho,'images/image_ujacar_290x290.png') as kid_pho ,beacon.beacon_id
+         ,ifnull(beacon.beacon_phot,'images/image_ujacar_290x290.png') as beacon_phot 
+		  from kid
+		  left join class
+		  on class.class_id = kid.class_id
+		  left join beacon
+      	  on beacon.kid_system_code = kid.kid_system_code AND beacon.center_code = kid.center_code
+		 <choose>
+		 	<when test="class_id!=null and keyWord!=null">
+		 		where kid.center_code=#{center_code} and class.class_id=#{class_id}
+			  	and kid.kid_name like concat('%',#{keyWord},'%') and beacon.kid_system_code is not null
+			  	Order by kid.kid_name asc
+		 	</when>
+		 	<when test="class_id==null and keyWord!=null">
+		 		where kid.center_code=#{center_code} and kid.kid_name like concat('%',#{keyWord},'%') and beacon.kid_system_code is not null
+		 	</when>
+		 	<otherwise>
+		 		where kid.center_code=#{center_code} and class.class_id=#{class_id} and beacon.kid_system_code is not null
+			  	Order by kid.kid_name asc
+		 	</otherwise>
+		 </choose>
+    </select>
+    
+    <!-- getBeaconSeach -->
+    <select id="BeaconSeach" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.BeaconDto">
+        SELECT beacon.beacon_id,beacon.beacon_com,beacon.beacon_use,beacon.beacon_stat,staff.staff_name
+		FROM beacon  
+		left join staff
+		on staff.staff_id = beacon.staff_id 
+		WHERE  
+		(beacon.beacon_id like CONCAT('%',#{keyWord},'%') ||
+		beacon.beacon_com like CONCAT('%',#{keyWord},'%') ||
+		beacon.beacon_stat like CONCAT('%',#{keyWord},'%') ||
+		staff.staff_name like CONCAT('%',#{keyWord},'%') ||
+		beacon.beacon_use like CONCAT('%',#{keyWord},'%')) and
+		beacon.center_code=#{center_code} 
+		ORDER BY beacon.beacon_id ASC;
+    </select>
+	
+    <update id="updateUser"
+            parameterType="com.test.rememberTest.Dto.MemberInfo">
+        UPDATE USERS2 SET
+            mPw=#{mPw}
+        WHERE mId=#{mId}
+    </update>
+   
+    <delete id="deleteUser" parameterType="com.test.rememberTest.Dto.MemberInfo">
+        DELETE FROM USERS2 WHERE mId=#{mId} AND mPw=#{mPw}
+    </delete>
+   
+    <select id="selectUserByIdAndPw" parameterType="com.test.rememberTest.Dto.MemberInfo" resultType="com.test.rememberTest.Dto.MemberInfo">
+        SELECT *  FROM USERS2  WHERE mId=#{mId} AND mPw=#{mPw}
+    </select>
+   
+   <select id="selectCheckId" parameterType="com.test.rememberTest.Dto.MemberInfo" resultType="com.test.rememberTest.Dto.MemberInfo">
+        SELECT mId FROM USERS2 WHERE mId=#{chk_id}
+    </select>
+    
+    <select id="selectTotalCount"
+            resultType="Integer">
+        SELECT
+            COUNT(*)
+        FROM USERS2
+    </select>
+   
+    <select id="selectUserList" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.MemberInfo">
+        SELECT * FROM USERS2
+        <where>
+            <if test="word != null">
+                mId like CONCAT('%',#{word},'%')
+            </if>
+        </where>
+    </select> 
+   
+   
+    <insert id="insertUser" parameterType="com.test.rememberTest.Dto.MemberInfo">
+        INSERT INTO
+        USERS2(
+            mId,mPw,mName,mPhone,mEmail,mGrade,mAgreeTerms,mAgreePrivacy
+        ) VALUES(
+            #{mId},#{mPw},#{mName},#{mPhone},#{mEmail},#{mGrade},#{mAgreeTerms},#{mAgreePrivacy}
+        )
+    </insert>
+    <!--****************** Center_Code 관련 ****************** -->
+    <select id="selectCode" resultType="com.test.rememberTest.Dto.Center_CodeDto" parameterType="java.util.Map">
+    	select right((select center_code from center_code where admin_area=#{adminArea} ORDER BY center_code DESC limit 1),2) as center_code;
+    </select>
+    
+    <!--****************** 차량 관리 ****************** -->
+	<select id="selectCar" resultType="com.test.rememberTest.Dto.Car" parameterType="java.util.Map">		
+	SELECT bus.*,staff.staff_name,staff.staff_phone,IF(EXISTS (select route.route_name from route where bus.bus_id = route.bus_id),'Y','-')as routeExists
+	,DATE_FORMAT(bus.CREATETIME,'%Y.%m.%d') AS CREATEDATEFORMAT
+	,DATE_FORMAT(bus.UPDATETIME,'%Y.%m.%d') AS UPDATEDATEFORMAT
+	, staff.staff_phot
+	FROM bus join staff on bus.staff_id = staff.staff_id where bus.center_code=#{center_code} ORDER BY bus.bus_name ASC;			
+	</select>	<!-- 차량 정보 조회 리스트 -->
+	
+	<select id="keyWordSelect" resultType="com.test.rememberTest.Dto.Car" parameterType="java.util.Map">
+	SELECT  bus.*,staff.staff_name,staff.staff_phone,IF(EXISTS (select route.route_name from route where bus.bus_id = route.bus_id),'Y','-')as routeExists 
+	,DATE_FORMAT(bus.CREATETIME,'%Y.%m.%d') AS CREATEDATEFORMAT
+	,DATE_FORMAT(bus.UPDATETIME,'%Y.%m.%d') AS UPDATEDATEFORMAT
+	FROM bus join staff on bus.staff_id = staff.staff_id
+	where bus.center_code=#{center_code} AND
+	(IF(EXISTS (select route.route_name from route where bus.bus_id = route.bus_id),'Y','-') like concat('%',#{keyWord},'%')
+	||bus.bus_name like concat('%',#{keyWord},'%')
+	||bus.bus_num like concat('%',#{keyWord},'%')
+	||bus.createtime like concat('%',#{keyWord},'%') 
+	||bus.updatetime like concat('%',#{keyWord},'%')
+	||staff.staff_name like concat('%',#{keyWord},'%')	
+	||staff.staff_phone like concat('%',#{keyWord},'%')) ORDER BY bus.bus_id ASC;	
+	</select> <!-- 차량 정보 조회 키워드 검색 -->
+	
+	<delete id="deleteCar" parameterType="java.util.Map">
+		delete from bus where bus_id = #{word}
+	</delete> <!-- 차량 정보 삭제 -->
+	
+	<select id="selectDetailCar" resultType="com.test.rememberTest.Dto.Car" parameterType="java.util.Map">
+	SELECT bus.*,staff.staff_name,staff.staff_phone,IF(EXISTS (select route.route_name from route where bus.bus_id = route.bus_id),'Y','-')as routeExists
+	,DATE_FORMAT(bus.CREATETIME,'%Y.%m.%d') AS CREATEDATEFORMAT
+	,DATE_FORMAT(bus.UPDATETIME,'%Y.%m.%d') AS UPDATEDATEFORMAT
+	,DATE_FORMAT(bus.bus_insur,'%Y.%m.%d') AS insurFormat,
+ 	 gw.equipment_name AS equipment_gate_name,  tb.equipment_name AS equipment_tablet_name
+	FROM bus join staff on bus.staff_id = staff.staff_id
+	join equipment gw on gw.equipment_id = bus.equipment_gate_id
+	join equipment tb on tb.equipment_id = bus.equipment_tablet_id
+	 WHERE bus.bus_id = #{word};
+	
+					
+	</select> <!-- 차량 상세 정보 검색 -->
+
+	<select id="selectMaxBus_id" resultType="com.test.rememberTest.Dto.Car" parameterType="java.util.Map">
+	select IFNULL(LPAD(max(code_num)+1, 2, '0'),'01') AS MAXCOUNT   FROM system_code where center_code=#{word} and code_type = 'B0'; 	
+	</select>	<!-- bus_id max값 확인 -->
+
+	<insert id="insertCar" parameterType="com.test.rememberTest.Dto.Car">
+		INSERT INTO bus (bus_insur,bus_borad,bus_use,bus_num,staff_id,registrant,bus_id,center_code,equipment_tablet_id,equipment_gate_id,bus_name,bus_com) 
+		VALUES (#{bus_insur},#{bus_borad}, #{bus_use}, #{bus_num}, #{staff_id}, #{registrant}, #{bus_id}, #{center_code}, #{equipment_tablet_id}, #{equipment_gate_id},#{bus_name},#{bus_com});
+	</insert> <!-- 차량 정보 입력 -->	
+	
+	<select id="selectBaseData" resultType="com.test.rememberTest.Dto.Car" parameterType="java.util.Map">
+		SELECT * FROM bus where bus_id = #{word}  ORDER BY bus_id ASC;		
+	</select>	<!-- 차량 정보 수정 기본데이터 검색 -->
+
+	<update id="updateCar" parameterType="java.util.Map">
+		update bus SET bus_insur=#{bus_insur},bus_borad=#{bus_borad},bus_use=#{bus_use},bus_num=#{bus_num}
+		,staff_id=#{staff_id},equipment_tablet_id=#{equipment_tablet_id},equipment_gate_id=#{equipment_gate_id}
+		,bus_name=#{bus_name},bus_com =#{bus_com} where bus_id =#{bus_id}; 		
+	</update> <!-- 차량 정보 수정 -->
+	
+	<!--****************** 기기 관리 ****************** -->
+	<select id="select_equipment" resultType="com.test.rememberTest.Dto.EquipmentDto" parameterType="java.util.Map">
+		SELECT * FROM equipment where center_code=#{word} ORDER BY equipment_id ASC;			
+	</select>	<!--차량 입력 기기 목록 -->
+    
+    <!--****************** 직원 관리 ****************** -->
+	
+	<select id="selectDriver" resultType="com.test.rememberTest.Dto.StaffDto">
+		SELECT staff.staff_id,staff.staff_name,user_roles.role
+		FROM staff 
+		join user_roles on user_roles.center_code = staff.center_code AND user_roles.staff_id = staff.staff_id
+		where (staff.center_code=#{center_code}) AND (staff.staff_position = '차량기사') AND (user_roles.role <![CDATA[<>]]> 'MEMBER_OUT') ORDER BY staff.staff_name ASC		
+	</select>	<!-- 운전기사 정보 조회 리스트(차량 정보입력시 사용(아이디,이름)) -->
+	
+	<select id="Staff_selectTeacher" resultType="com.test.rememberTest.Dto.StaffDto">
+		SELECT staff.staff_id,staff.staff_name,staff.staff_phone,staff.staff_phot,user_roles.role
+		FROM staff
+		join user_roles on user_roles.center_code = staff.center_code AND user_roles.staff_id = staff.staff_id
+		where (staff.center_code=#{center_code}) AND (staff.staff_position = '보육교사') AND (user_roles.role <![CDATA[<>]]> 'MEMBER_OUT') ORDER BY staff.staff_name ASC						
+	</select>	<!-- 보육선생 정보 조회 리스트(노선 정보입력(인솔교사 배치)시 사용(아이디,이름)) -->
+	
+	<select id="selectDriverP" resultType="com.test.rememberTest.Dto.StaffDto" parameterType="java.util.Map">
+		SELECT staff_phone,center_code FROM staff where center_code=#{center_code} AND staff_id = #{word} ORDER BY staff_id ASC		
+	</select>	<!-- 운전기사 정보 조회 리스트(차량 정보입력시 사용(연락처,등록자 센터 코드)) -->
+    
+    
+	<!--****************** 노선 관리 ****************** -->
+		<select id="Route_selectData1" resultType="com.test.rememberTest.Dto.BusRouteDto" parameterType="java.util.Map">
+	Select route.route_name,route.route_id from route join bus ON bus.bus_id = route.bus_id WHERE bus.bus_id = #{word};					
+	</select> <!--차량 상세 정보 노선 배치 정보 -->
+	
+	<select id="stationNameInRoute" resultType="com.test.rememberTest.Dto.BusRouteDto" parameterType="java.util.Map">
+		Select route.route_name from route 
+		join course_and_station on route.course_id = course_and_station.course_id
+		join station ON station.station_id = course_and_station.station_id 
+		WHERE station.station_id = #{station_id}; 			
+	</select> <!--정류장 노선 배치 정보 -->
+	
+	<select id="selectRouteName" resultType="com.test.rememberTest.Dto.BusRouteDto" parameterType="java.util.Map">
+		Select * from route 
+		WHERE route.route_id = #{route_id}; 			
+	</select> 
+	
+	<select id="Route_selectDataBus" resultType="com.test.rememberTest.Dto.BusRouteDto" parameterType="java.util.Map">
+		 SELECT * FROM route WHERE bus_id = #{bus_id} AND
+		((TIME(route_start) BETWEEN  TIME(#{route_start}) AND TIME(#{route_arrive})) OR
+		(TIME(route_arrive) BETWEEN  TIME(#{route_start}) AND TIME(#{route_arrive}))) ORDER BY route_arrive ASC
+	</select><!-- 노선 입력(차량배치 스탭) 배치여부 판단 select -->
+	
+	<select id="Route_selectDataTeacher" resultType="com.test.rememberTest.Dto.BusRouteDto" parameterType="java.util.Map">
+		SELECT * FROM route WHERE (main_staff_id = #{staff_id} or sub_staff_id = #{staff_id}) AND
+		((TIME(route_start) BETWEEN  TIME(#{route_start}) AND TIME(#{route_arrive})) OR
+		(TIME(route_arrive) BETWEEN  TIME(#{route_start}) AND TIME(#{route_arrive}))) ORDER BY route_arrive ASC
+	</select><!-- 노선 입력(인솔교사 배치 스탭) 배치여부 판단 select -->
+	
+	<select id="Route_selectMaxRoute_id" resultType="com.test.rememberTest.Dto.BusRouteDto" parameterType="java.util.Map">
+		 select IFNULL(LPAD(max(code_num)+1, 2, '0'),'01') AS MAXCOUNT   FROM system_code where center_code=#{word} and code_type = 'R0'; 
+	</select>	<!-- Route_id max값 확인 -->
+	
+	<select id="routeBoardKid" resultType="com.test.rememberTest.Dto.BusRouteDto" parameterType="java.util.Map">
+		 select bk.kid_system_code
+			from board_and_kid bk 
+			where bk.route_id=#{route_id} and
+			bk.center_code=#{center_code}; 
+	</select>	<!-- Route_id max값 확인 -->
+	
+	<insert id="Route_insertData" parameterType="com.test.rememberTest.Dto.BusRouteDto">
+		INSERT INTO route (affiliation,route_id,course_id,bus_id,
+		
+		<if test="!sub_staff_id.equals('') and sub_staff_id != null">
+			sub_staff_id,
+		</if>		
+		main_staff_id
+		,route_type,route_name,route_start,route_arrive,route_sem
+		,route_year,route_use,registrant)
+		VALUES (#{affiliation},#{route_id},#{course_id},#{bus_id},
+		<if test="!sub_staff_id.equals('') and sub_staff_id != null">
+			#{sub_staff_id},
+		</if>		
+		#{main_staff_id},#{route_type},#{route_name},#{route_start},#{route_arrive},#{route_sem},#{route_year},#{route_use},#{registrant});
+	</insert> <!-- 노선 정보 입력 -->
+	
+	<update id="Route_updateData" parameterType="com.test.rememberTest.Dto.BusRouteDto">
+		UPDATE route SET bus_id=#{bus_id},sub_staff_id=#{sub_staff_id},main_staff_id=#{main_staff_id}
+		,route_type=#{route_type},route_name=#{route_name},route_start=#{route_start},route_arrive=#{route_arrive},route_sem=#{route_sem}
+		,route_year=#{route_year},route_use=#{route_use} where route_id=#{route_id};
+	</update> <!-- 노선 정보 수정 -->
+	
+	
+	<!--****************** 코스관리 관리 ****************** -->
+	<select id="Course_selectMaxCourse_id" resultType="com.test.rememberTest.Dto.CourseDto" parameterType="java.util.Map">
+		 select IFNULL(LPAD(max(code_num)+1, 2, '0'),'01') AS MAXCOUNT   FROM system_code where center_code=#{word} and code_type = 'CR'; 
+	</select>	<!-- course_id max값 확인 -->
+	
+	<!--****************** 코스관리 삭제 ****************** -->
+	<delete id="CourseDelete"  parameterType="java.util.Map">
+		delete from course WHERE course_id = #{course_id};
+	</delete>
+	
+	<insert id="Course_insertCourse" parameterType="java.util.Map">
+		insert into course (affiliation,course_id,course_name,course_use,registrant)
+		value (#{affiliation},#{course_id},#{course_name},#{course_use},#{registrant});
+	</insert> <!-- course 입력 -->
+	
+	<update id="Course_UpdateCourse" parameterType="java.util.Map">
+		update course SET course_name=#{course_name}, course_use=#{course_use} where course_id = #{course_id}; 		
+	</update> <!-- Course 정보 수정 -->
+	
+	<insert id="course_and_station_insert" parameterType="java.util.Map">
+		insert into course_and_station(station_id,course_id,`order`) value 		
+		<foreach collection="station_id" item="item" index="index" separator="),(" open="(" close=");">
+	   	 	#{item},#{course_id},#{index}	   	 	
+		</foreach>		
+	</insert> <!-- course_and_station 입력 -->
+	
+	
+    <select id="selectStaff" resultType="com.test.rememberTest.Dto.StaffDto" parameterType="java.util.Map">
+		SELECT staff_phone,center_code
+		FROM staff 
+		where staff_id = #{code} 
+		ORDER BY staff_id ASC		
+	</select>	<!-- 운전기사 정보 조회 리스트(차량 정보입력시 사용(연락처,등록자 센터 코드)) -->
+	
+	<select id="selectAllStaff" resultType="com.test.rememberTest.Dto.StaffDto" parameterType="java.util.Map">
+		select staff.*, ifnull(class.class_name,'-') as class_name,user_roles.role
+		from staff
+		left join class
+		on staff.staff_id = class.staff_id_1 or staff.staff_id = class.staff_id_2
+		left join user_roles
+	    on user_roles.center_code = staff.center_code 
+	    AND user_roles.staff_id = staff.staff_id
+		where staff.center_code = #{center_code} and staff.staff_position != '원장'
+		ORDER BY staff_name ASC	;
+	
+	</select>	<!-- 운전기사 정보 조회 리스트(차량 정보입력시 사용(연락처,등록자 센터 코드)) -->
+	
+	<!-- 원아 리스트 -->
+    <select id="getAllKidList_sort" parameterType="com.test.rememberTest.Dto.KidDto" resultType="com.test.rememberTest.Dto.KidDto">
+      SELECT kid.*,parent_and_kid.par_id,parent.par_name,class.class_name
+		FROM kid  
+		left join class
+		on class.class_id = kid.class_id
+		left join parent_and_kid
+		on parent_and_kid.kid_system_code =kid.kid_system_code
+		left join parent
+		on parent_and_kid.par_id = parent.par_id
+		where kid.center_code = #{center_code}
+		<choose>
+	        <when test="th_type==1">
+	        	<choose>
+	        		<when test="orderBy_type=='asc'">
+	        			group by kid.kid_name
+	        			ORDER BY kid.kid_name asc 
+	        		</when>
+	        		<otherwise>
+	        			group by kid.kid_name
+	        			ORDER BY kid.kid_name desc
+	        		</otherwise>
+	        	</choose>
+	        </when>
+	        <when test="th_type==2">
+	        	<choose>
+	        		<when test="orderBy_type=='asc'">
+	        			group by kid.kid_name
+	        			ORDER BY kid.kid_birthday asc, kid.kid_name asc 
+	        		</when>
+	        		<otherwise>
+	        			group by kid.kid_name
+	        			ORDER BY kid.kid_birthday desc, kid.kid_name asc
+	        		</otherwise>
+	        	</choose>
+	        </when>
+	        <when test="th_type==3">
+	        	<choose>
+	        		<when test="orderBy_type=='asc' and sortSelect!=''">
+	        			and kid.kid_sex=#{sortSelect}
+	        			group by kid.kid_name
+	        			ORDER BY kid.kid_name asc , kid.kid_birthday asc
+	        		</when>
+	        		<when test="orderBy_type!='asc' and sortSelect!=''">
+	        			and kid.kid_sex=#{sortSelect}
+	        			group by kid.kid_name
+	        			ORDER BY kid.kid_name desc , kid.kid_birthday asc
+	        		</when>
+	        		<otherwise>
+	        			group by kid.kid_name
+	        			ORDER BY kid.kid_name asc , kid.kid_birthday asc
+	        		</otherwise>
+	        	</choose>
+	        </when>
+	         <when test="th_type==4">
+	        	<choose>
+	        		<when test="orderBy_type=='asc' and sortSelect!=''">
+	        			and class.class_id =#{sortSelect}
+	        			group by kid.kid_name
+	        			ORDER BY kid.kid_name asc , kid.kid_birthday asc
+	        		</when>
+	        		<when test="orderBy_type=='asc' and sortSelect!=''">
+	        			and class.class_id =#{sortSelect}
+	        			group by kid.kid_name
+	        			ORDER BY kid.kid_name desc , kid.kid_birthday asc
+	        		</when>
+	        		<otherwise>
+	        			group by kid.kid_name
+	        			ORDER BY kid.kid_name asc , kid.kid_birthday asc
+	        		</otherwise>
+	        	</choose>
+	        </when>
+	        <when test="th_type==5">
+	        	<choose>
+	        		<when test="orderBy_type=='asc' and sortSelect!=''">
+	        			and kid.kid_blood =#{sortSelect}
+	        			group by kid.kid_name
+	        			ORDER BY kid.kid_name asc , kid.kid_birthday asc
+	        		</when>
+	        		<when test="orderBy_type=='asc' and sortSelect!=''">
+	        			and kid.kid_blood =#{sortSelect}
+	        			group by kid.kid_name
+	        			ORDER BY kid.kid_name desc , kid.kid_birthday asc
+	        		</when>
+	        		<otherwise>
+	        			group by kid.kid_name
+	        			ORDER BY kid.kid_name asc , kid.kid_birthday asc
+	        		</otherwise>
+	        	</choose>
+	        </when>
+	    </choose>
+<!-- 		ORDER BY kid.kid_name ASC; -->
+    </select>
+    
+	<select id="selectAllStaff_sort" resultType="com.test.rememberTest.Dto.StaffDto" parameterType="java.util.Map">
+	  select staff.*, ifnull(class.class_name,'-') as class_name,user_roles.role
+		from staff
+		left join class
+		on staff.staff_id = class.staff_id_1 or staff.staff_id = class.staff_id_2
+		left join user_roles
+	  	on user_roles.center_code = staff.center_code 
+	  	AND user_roles.staff_id = staff.staff_id
+		where staff.center_code = #{center_code} and staff.staff_position != '원장'
+		<choose>
+	        <when test="th_type==1">
+	        	<choose>
+	        		<when test="orderBy_type=='asc'">
+	        			ORDER BY staff_id asc , staff_name asc
+	        		</when>
+	        		<otherwise>
+	        			ORDER BY staff_id desc , staff_name asc
+	        		</otherwise>
+	        	</choose>
+	        	
+	        </when>
+	        <when test="th_type==2">
+	        	<choose>
+	        		<when test="orderBy_type=='asc'">
+	        			ORDER BY staff_name asc , staff_id asc
+	        		</when>
+	        		<otherwise>
+	        			ORDER BY staff_name desc , staff_id asc
+	        		</otherwise>
+	        	</choose>
+	        </when>
+	        <when test="th_type==3">
+	        	<choose>
+	        		<when test="orderBy_type=='asc' and sortSelect!=''">
+	        			and staff.staff_position=#{sortSelect}
+	        			ORDER BY staff_name asc , staff_id asc
+	        		</when>
+	        		<when test="orderBy_type=='asc' and sortSelect!=''">
+	        			and staff.staff_position=#{sortSelect}
+	        			ORDER BY staff_name desc , staff_id asc
+	        		</when>
+	        		<otherwise>
+	        			ORDER BY staff_name asc , staff_id asc
+	        		</otherwise>
+	        	</choose>
+	        </when>
+	         <when test="th_type==4">
+	        	<choose>
+	        		<when test="orderBy_type=='asc' and sortSelect!=''">
+	        			and class.class_id =#{sortSelect}
+	        			ORDER BY staff_name asc , staff_id asc
+	        		</when>
+	        		<when test="orderBy_type=='asc' and sortSelect!=''">
+	        			and class.class_id =#{sortSelect}
+	        			ORDER BY staff_name desc , staff_id asc
+	        		</when>
+	        		<otherwise>
+	        			ORDER BY staff_name asc , staff_id asc
+	        		</otherwise>
+	        	</choose>
+	        </when>
+        </choose>
+	</select>	
+
+	<select id="positionType" resultType="com.test.rememberTest.Dto.StaffDto" parameterType="java.util.Map">
+		  select staff.staff_position
+		  from staff
+		  where staff.center_code=#{center_code} and staff_position !='원장'
+		  group by staff.staff_position;
+	</select>	
+
+	<!-- 교직원 정보 -->
+	<select id="selectStaffAccount" resultType="com.test.rememberTest.Dto.StaffDto" parameterType="java.util.Map">
+		select staff.admin_area,staff.center_code,staff.registrant,staff.staff_charge,staff.staff_email,
+        staff.staff_id,staff.staff_name,staff.staff_phone,staff.staff_position,staff.staff_pw,
+        staff.staff_type,staff.updatetime,staff.createtime,
+        ifnull(if(staff.staff_phot='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',staff.staff_phot),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as staff_phot,
+        ifnull(class.class_name,'-') as class_name
+		from staff
+		left join class
+		on staff.staff_id = class.staff_id_1 or staff.staff_id = class.staff_id_2
+		where staff.center_code = #{center_code} and staff.staff_id=#{staff_id} 
+		ORDER BY staff_name ASC	;
+	
+	</select>	<!-- 운전기사 정보 조회 리스트(차량 정보입력시 사용(연락처,등록자 센터 코드)) -->
+	
+	
+    <insert id="insertStation" parameterType="com.test.rememberTest.Dto.StationInfo">
+        INSERT INTO
+        station(
+            affiliation,station_id,station_name,registrant,latitude,longitude,station_addr,station_use
+        ) VALUES(
+            #{center_code},#{station_id},#{station_name},#{registrant},#{latitude},#{longitude},#{station_addr},#{station_use}
+        )
+    </insert>
+    
+    
+    <delete id="course_and_station_delete" parameterType="java.util.Map">
+		delete from course_and_station where course_id = #{course_id}; 
+	</delete> <!-- course_and_station 삭제 -->
+	
+    <select id="selectStationUseList"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.StationInfo">
+        SELECT * FROM station WHERE  affiliation= #{center_code} AND station_use = 1 AND station_id not like '%S0_00' ORDER BY station_name ASC;
+    </select>
+    
+    <select id="selectStationList"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.StationInfo">
+        SELECT station.*,
+		IF(EXISTS (select cs.course_id 
+		          from course_and_station cs 
+		          where station.station_id = cs.station_id),'1','0')as routeExists
+			,DATE_FORMAT(station.CREATETIME,'%Y.%m.%d') AS CREATEDATEFORMAT
+			,DATE_FORMAT(station.UPDATETIME,'%Y.%m.%d') AS UPDATEDATEFORMAT
+			FROM station 
+		  where station.affiliation=#{center_code} 
+		  ORDER BY station.station_name ASC;
+    </select>
+    
+    <select id="stationCount"
+            resultType="Integer">
+        SELECT
+            COUNT(*)
+        FROM station
+    </select>
+	
+	<select id="selectMaxStation_id" resultType="com.test.rememberTest.Dto.StationInfo" parameterType="java.util.Map">
+   		select IFNULL(LPAD(max(code_num)+1, 2, '0'),'01') AS MAXCOUNT 
+   		FROM system_code 
+   		where center_code=#{word} and code_type = 'S0';    
+  	</select>   <!-- bus_id max값 확인 -->
+	
+    <select id="selectDetailStation"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.StationInfo">
+        SELECT *,IF(EXISTS (select cs.course_id 
+          from course_and_station cs 
+          where station.station_id = cs.station_id),'1','0')as routeExists
+        FROM station 
+        WHERE station_id=#{station_id} 
+    </select> 
+    <delete id="deleteStation"
+            parameterType="com.test.rememberTest.Dto.StationInfo">
+        DELETE FROM station
+        WHERE station_id=#{station_id}
+    </delete>
+    <update id="updateStation"
+            parameterType="com.test.rememberTest.Dto.StationInfo">
+        UPDATE station SET
+            station_name=#{station_name},
+            registrant=#{registrant},
+            latitude=#{latitude},
+            longitude=#{longitude},
+            station_addr=#{station_addr},
+            station_use=#{station_use}
+        WHERE station_id=#{station_id}
+    </update>
+    
+    <select id="searchStation"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.StationInfo">
+        SELECT *,IF(EXISTS (select cs.course_id 
+          from course_and_station cs 
+          where station.station_id = cs.station_id),'1','0')as routeExists
+        FROM station
+        WHERE affiliation =#{center_code} and 
+        	(station_id like CONCAT('%',#{keyWord},'%') ||
+        	  station_name like CONCAT('%',#{keyWord},'%') )
+        	  ORDER BY station_name ASC
+    </select>
+    
+    <select id="chkStName"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.StationInfo">
+        SELECT station_name 
+        FROM station
+        WHERE station_name =#{stName}
+    </select> 
+    
+<!-- 	실시간 버스 route -->
+	 <select id="seleceRouteList"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.BusRouteDto">
+        SELECT * FROM route WHERE affiliation =#{center_code}
+        ORDER BY route_name ASC
+    </select>
+    
+    <select id="selecUseRouteAll"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.BusRouteDto">
+        SELECT * FROM route WHERE route_use='1' and affiliation=#{center_code}
+        ORDER BY route_name ASC
+
+    </select>
+    
+    
+    <!-- 노선삭제 -->
+    <delete id="RouteDelete" >
+    	delete from route where route_id =#{route_id};
+    </delete>
+    
+    <select id="seleceRouteInfoAll"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.BusRouteDto">
+        
+		   select route.*,bus.bus_num,bus.bus_name,bus.bus_borad,
+		    s.staff_name,s.staff_phone,
+		    ifnull(if(s.staff_phot='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',s.staff_phot),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as staff_phot,
+		    s1.staff_name as mainStaff_name,s1.staff_phone as mainStaff_phone,s1.staff_id as mainStaff_id,
+		    ifnull(if(s1.staff_phot='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',s1.staff_phot),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as mainStaff_phot,
+		    s2.staff_name as subStaff_name,s2.staff_phone as subStaff_phone,s2.staff_id as mainStaff_id,
+		    ifnull(if(s2.staff_phot='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',s2.staff_phot),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as subStaff_phot
+		  from route
+		  join bus 
+		  ON bus.bus_id = route.bus_id
+		  join staff s
+		  on bus.staff_id = s.staff_id
+		  join staff s1
+		  on route.main_staff_id = s1.staff_id
+		  left join staff s2
+		  on  route.sub_staff_id = s2.staff_id
+		  where route.affiliation = #{center_code}
+    </select>
+    
+    <select id="seleceRouteBusInfo"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.BusRouteDto">
+        
+        select staff.staff_name,staff.staff_phone,staff.staff_id,bus.bus_id,route.route_id,bus.bus_num,bus.bus_borad,bus.bus_name
+		from route 
+		join bus 
+		on route.bus_id = bus.bus_id
+		join staff
+		on bus.staff_id = staff.staff_id
+		where route.route_id =  #{code}
+		ORDER BY affiliation DESC
+
+    </select>
+    
+    <!--***************노선정보조회 배치된 원아****************-->
+    <select id="seleceRouteKidsAll"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.BusRouteDto">
+ 		
+		select k.kid_name,k.kid_system_code,bk.route_id,
+		ifnull(if(k.kid_pho='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',k.kid_pho),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as kid_pho
+		from kid k, route r, board_and_kid bk
+		where bk.kid_system_code = k.kid_system_code and
+		r.affiliation = #{code} and
+		r.route_id = bk.route_id
+		ORDER BY route_id asc,k.kid_name asc;
+		
+    </select>
+    
+	 <select id="selectRouteDetail"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.BusRouteDto">
+        select route.course_id,staff.staff_name ,staff.staff_phone,staff.staff_id,
+        ifnull(if(staff.staff_phot='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',staff.staff_phot),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as staff_phot,
+        bus.bus_id,route.route_id,route.route_use,route.route_type,
+        bus.bus_num,bus.bus_borad,bus.bus_name,route.route_name,TIME_FORMAT(route.route_start,'%H:%i') as route_start ,TIME_FORMAT(route.route_arrive,'%H:%i') as route_arrive ,
+        DATE_FORMAT(route.updatetime,'%Y.%m.%d') AS UPDATEDATEFORMAT ,
+        DATE_FORMAT(route.createtime,'%Y.%m.%d') AS CREATEDATEFORMAT ,
+        bus.bus_id, bus.bus_name, bus.bus_num
+		from route 
+		join bus 
+		on route.bus_id = bus.bus_id
+		join staff
+		on bus.staff_id = staff.staff_id
+		or route.main_staff_id = staff.staff_id
+		or route.sub_staff_id = staff.staff_id
+		where route.route_id = #{code};
+    </select> 
+	
+	<select id="selecstationInRoute"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.BusRouteDto">
+        select route.course_id,station.station_name,TIME_FORMAT(stat_sche.arrive_time,'%H:%i') as arrive_time,station.station_id,station.latitude,station.longitude,course_and_station.`order`
+		from route 
+		join course_and_station 
+		on route.course_id = course_and_station.course_id
+		join station
+		on course_and_station.station_id = station.station_id
+		join stat_sche
+		on route.route_id = stat_sche.route_id and course_and_station.station_id = stat_sche.station_id
+		where route.route_id = #{route_id} and station.station_id not like '%S0_00' ORDER BY course_and_station.`order` ASC;
+ 
+    </select> 
+    
+    <select id="seleckidsInStation"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.BusRouteDto">
+		
+		select k.kid_system_code,k.kid_name,k.kid_sex,k.kid_addr,s.station_name,s.station_addr,
+		s.latitude,s.longitude,r.route_id,s.station_id,k.latitude as kid_latitude,k.longitude as kid_longitude,
+		ifnull(if(k.kid_pho='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',k.kid_pho),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as kid_pho
+		from route r, board_and_kid bk , kid k,station s
+		where r.route_id=#{route_id} and
+		bk.station_id =s.station_id and
+    	bk.route_id = r.route_id and
+		bk.kid_system_code = k.kid_system_code;
+    </select>
+    
+    <select id="selecAllKidInRoute"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.BusRouteDto">
+        select k.kid_name,k.kid_system_code
+		from route r, kid k, board_and_kid bk
+		where r.route_id=#{code} and
+		bk.route_id = r.route_id and
+		bk.kid_system_code = k.kid_system_code;
+    </select>
+    
+     <select id="selecrealTimeInfo"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.BusRouteDto">
+        select k.kid_name,k.kid_system_code
+		from route r, kid k, board_and_kid bk
+		where r.route_id=#{code} and
+		bk.route_id = r.route_id and
+		bk.kid_system_code = k.kid_system_code;
+    </select>
+    
+    <!--****************** 노선 조회 ****************** -->
+    <select id="searchRoute"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.BusRouteDto">
+        SELECT *
+        from route r
+		where (r.route_name like CONCAT('%',#{keyWord},'%') 
+		||r.route_type like CONCAT('%',#{keyWord},'%')
+		||r.route_sem like CONCAT('%',#{keyWord},'%')
+		||r.route_arrive like CONCAT('%',#{keyWord},'%')
+		||r.route_start like CONCAT('%',#{keyWord},'%')
+		||r.route_year like CONCAT('%',#{keyWord},'%'))
+		and (r.affiliation = #{center_code})
+		ORDER BY r.route_id ASC;
+    </select>
+     <!--****************** 노선 사용업데이트 ****************** -->
+    <update id="routeUseCheck"
+            parameterType="com.test.rememberTest.Dto.BusRouteDto">
+        UPDATE route SET
+               route_use=#{route_use}
+        WHERE  route_id=#{route_id}
+    </update>
+    
+	  <!--****************** 원아 관리 ****************** -->
+    <select id="Kid_Selectdata" resultType="com.test.rememberTest.Dto.KidDto" >
+		SELECT kid.*, 
+		 if(EXISTS(
+		 select *
+		 from board_and_kid
+		 join route on (board_and_kid.route_id = route.route_id) AND (route.route_type ='등원')
+		 where (board_and_kid.kid_system_code = kid.kid_system_code)		 
+		 <if test="route_id != null">
+		 	AND route.route_id != #{route_id}
+		 </if> 	  
+		 ),'1','0') as routeOnExists ,
+		 if(EXISTS(
+		 select *
+		 from board_and_kid
+		 join route on (board_and_kid.route_id = route.route_id) AND (route.route_type ='하원')
+		 where (board_and_kid.kid_system_code = kid.kid_system_code)
+		 <if test="route_id != null">
+		 	AND route.route_id != #{route_id}
+		 </if> 
+		 ),'1','0') as routeOffExists 
+		 FROM kid
+		 where kid.center_code = #{center_code} ORDER BY kid.kid_name ASC;	
+	</select>	<!-- 원아 기본데이터 검색 -->
+	
+	<!--****************** 원아 관리 ****************** -->
+    <select id="Center_selectDataPosition" resultType="com.test.rememberTest.Dto.CenterDto" >
+		select * from center where center_code =#{code};	
+	</select>	<!-- 차량 정보 수정 기본데이터 검색 -->
+	
+	
+	
+	<!--****************** Stat_scheDao 관리 ****************** -->
+	<insert id="Stat_scheDao_insert" parameterType="java.util.Map">
+		insert into stat_sche (affiliation,station_id,route_id,arrive_time,registrant) value 			
+		<foreach collection="dtoList" item="item" index="index" separator="),(" open="(" close=");">
+			#{item.affiliation},#{item.station_id},#{item.route_id},TIME(#{item.arrive_time}),#{item.registrant}
+		</foreach>		
+	</insert> <!-- Stat_scheDao_insert 입력 -->
+	
+	<!--****************** Board_and_kid 관리 ****************** -->
+	<insert id="Board_and_kid_insert" parameterType="java.util.Map">
+		insert into board_and_kid (kid_system_code,center_code,station_id,route_id)value		
+		<foreach collection="dtoList" item="item" index="index" separator="),(" open="(" close=");">
+			#{item.kid_system_code},#{item.affiliation},#{item.station_id},#{item.route_id}
+		</foreach>
+	</insert> <!-- Board_and_kid 입력 -->
+	
+	<!--     유치원 Center    -->
+	 <select id="selectCenterAddr"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.CenterDto">
+        SELECT center_code, latitude,longitude,center_name
+        FROM center
+        WHERE center_code =#{word}
+    </select>
+	
+	<!--      실시간 차량 위치조회              -->
+	<select id="selectRealTimeRoute"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.RealTimeDto">
+        select s.latitude,s.longitude,s.station_id, s.station_name, TIME_FORMAT(r.sch_time,'%H:%i') as sch_time,  r.real_time_id,count(b.kid_system_code),r.real_time_type,TIME_FORMAT(ro.route_start,'%H:%i') as route_start,TIME_FORMAT(ro.route_arrive,'%H:%i') as route_arrive 
+		from real_time r,station s,board_and_kid b,route ro
+		where r.route_id = #{route_id}
+		and r.station_id = s.station_id
+		and b.route_id = r.route_id
+		and b.station_id = r.station_id
+		and r.route_id = ro.route_id
+		and r.affiliation = #{center_code}
+		group by r.station_id;
+    </select>
+    
+    <select id="selectRealTimeCar"
+            parameterType="java.util.Map"
+            resultType="com.test.rememberTest.Dto.RealTimeDto">
+        select rt.station_id 
+		from real_time rt
+		where rt.affiliation = #{center_code}
+		and rt.route_id = #{route_id}
+		and rt.real_time_type='도착';
+    </select>
+    
+	<select id="Route_selectUpdateBaseData" resultType="com.test.rememberTest.Dto.BusRouteDto" parameterType="java.util.Map">
+		SELECT route.*,course.course_name FROM route,course 
+		where route.route_id = #{route_id} AND route.course_id = course.course_id ORDER BY route_id ASC;
+	</select>	<!-- 차량 정보 수정 기본데이터 검색 -->
+	
+	<!--****************** 노선 관리 ****************** -->
+	<select id="Route_selectDataList" resultType="com.test.rememberTest.Dto.BusRouteDto" parameterType="java.util.Map">
+		Select route.*, course.course_name from route join course on course.course_id = route.course_id WHERE route.affiliation = #{center_code};		
+	</select> <!--route List-->
+	
+	<delete id="Stat_sche_delete" parameterType="java.util.Map">		
+		delete from stat_sche where route_id =#{route_id};
+	</delete> <!-- Board_and_kid 삭제 -->
+	
+	<delete id="Board_and_kid_delete" parameterType="java.util.Map">		
+		delete from board_and_kid where route_id = #{route_id};
+	</delete> <!-- Board_and_kid 삭제 -->
+
+	<select id="KidsSearchResult" resultType="com.test.rememberTest.Dto.KidDto" parameterType="java.util.Map">
+        
+        SELECT kid.staff_id,kid.createtime,kid.updatetime,kid.center_code,kid.class_id,kid.latitude,kid.longitude,
+        ifnull(if(kid.kid_pho='','http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png',kid.kid_pho),'http://13.125.170.255:8080/Spring/Default/image_ujacar_290x290.png') as kid_pho,
+        kid.kid_blood,kid.kid_birthday,kid.kid_addr,kid.kid_system_code,kid.kid_name,kid.kid_sex,
+        DATE_FORMAT(kid.kid_enter,'%Y.%m.%d') AS kid_enter,
+        DATE_FORMAT(kid.kid_retire,'%Y.%m.%d') as kid_retire_r 
+		FROM kid  
+		WHERE  
+		(kid.kid_name like CONCAT('%',#{keyWord},'%') ||
+		kid.kid_system_code like CONCAT('%',#{keyWord},'%')) 
+		ORDER BY kid.kid_name ASC;
+
+	</select>	<!-- 원아 기본데이터 검색 -->
+	
+	<select id="checkParent" resultType="String" parameterType="String">
+        select 
+        ifnull(kid.par_id,'1')
+ 		from kid 
+ 		where kid.kid_system_code=#{kid_code};
+	</select>	<!-- 원아 학부모 있는지 체크 -->
+	
+	<update id="updateParentId" parameterType="com.test.rememberTest.Dto.KidDto">
+		update kid
+		set par_id=#{par_id}
+		where kid_system_code=#{kid_code};
+	</update>
+	
+
+    <!-- 김호상Mapper -->
+      <!--****************** medication 관리 ****************** -->	
+	<select id="Medication_requestDao_select" resultType="com.test.rememberTest.Dto.Medication_requestDto" parameterType="java.util.Map">
+	select medication_request.request_id, medication_request.volume,Time_format(medication_request.dosing_time,'%H시 %i분') as dosing_time,
+	Date_format(medication_request.medication_date,'%Y년 %m월 %d일') as medication_date,kid.kid_name,medication_request.medication_kind,
+	medication_request.symptom,staff.staff_name
+	from medication_request
+	join kid
+	on kid.kid_system_code = medication_request.kid_system_code AND kid.class_id = #{class_id}
+	join medication_confirmation
+	on medication_request.request_id = medication_confirmation.request_id
+	join staff
+	on medication_request.staff_id = staff.staff_id
+	where medication_request.medication_date like CONCAT(#{date},'%')
+	order by medication_date desc, dosing_time desc, kid.kid_name asc;
+	</select> <!--medication List(투약 대조서 반별/월별 리스트 출력시,투약일지상세정보 폼으로 페이지전환)-->
+	
+	<select id="Medication_requestDao_requestselect" resultType="com.test.rememberTest.Dto.Medication_requestDto" parameterType="java.util.Map">
+	select medication_request.symptom,medication_request.medication_kind,medication_request.volume,
+	medication_request.`count`,medication_request.keep,medication_request.uniqueness,
+	Time_format(medication_request.dosing_time,'%H시 %i분') as dosing_time,
+	Date_format(medication_request.medication_date,'%Y년 %m월 %d일') as medication_date
+	,kid.kid_name,class.class_name,parent.par_name
+	from medication_request
+	join kid
+	on kid.kid_system_code = medication_request.kid_system_code
+	join class
+	on kid.class_id = class.class_id
+	left join parent
+	on kid.par_id = parent.par_id
+	where medication_request.request_id = #{request_id};
+	</select> <!--Medication_requestDao_request 조회(대조서 상세 보기의 의뢰서 정보)-->
+	
+	<select id="Medication_requestDao_select_DownData" resultType="com.test.rememberTest.Dto.Medication_requestDto" parameterType="java.util.Map">
+  	select medication_request.symptom,medication_request.medication_kind,medication_request.volume,
+	medication_request.`count`,medication_request.keep,medication_request.uniqueness,
+	Time_format(medication_request.dosing_time,'%H시 %i분') as dosing_time,
+	Date_format(medication_request.medication_date,'%Y년 %m월 %d일') as medication_date
+	,kid.kid_name,class.class_name,parent.par_name,
+  	staff.staff_name,medication_confirmation.uniqueness as uniqueness1,
+  	center.center_name
+	from medication_request
+	join kid
+	on kid.kid_system_code = medication_request.kid_system_code
+	join class
+	on kid.class_id = class.class_id
+	left join parent
+	on kid.par_id = parent.par_id
+  	join medication_confirmation
+  	on medication_confirmation.request_id = medication_request.request_id
+  	join staff
+  	on medication_confirmation.staff_id = staff.staff_id
+  	join center
+  	on medication_request.center_code = center.center_code
+	where 
+	<foreach collection="request_id" item="item" index="index" separator=" or " open="" close=";">
+		 medication_request.request_id = #{item}
+	</foreach>	
+	</select> <!--Medication_request_document 다운로드 데이터(다중다운로드)-->
+	
+	<select id="Medication_requestDao_select_diaryDown" resultType="com.test.rememberTest.Dto.Medication_requestDto" parameterType="java.util.Map">
+	select medication_request.request_id, medication_request.volume,Time_format(medication_request.dosing_time,'%H시 %i분') as dosing_time,
+	Date_format(medication_request.medication_date,'%Y년 %m월 %d일') as medication_date,kid.kid_name,medication_request.medication_kind,
+	medication_request.symptom,staff.staff_name,Date_format(medication_request.medication_date,'%m') as `month`
+	from medication_request
+	join kid
+	on kid.kid_system_code = medication_request.kid_system_code AND kid.class_id = #{class_id}
+	join medication_confirmation
+	on medication_request.request_id = medication_confirmation.request_id
+	join staff
+	on medication_request.staff_id = staff.staff_id
+	where
+	<foreach collection="date" item="item" index="index" separator=" or " open="" close="">
+		  medication_request.medication_date like CONCAT(#{item},'%')
+	</foreach>	
+	order by `month` asc,medication_date desc, dosing_time desc, kid.kid_name asc;
+	</select> <!--Medication_request_diary 다운로드 데이터(다중다운로드)-->	
+	
+	<select id="Medication_requestDao_select_getByteImage" resultType="String"  parameterType="java.util.Map">
+		select sign_url FROM sign_parent where request_id = #{request_id};
+ 	</select> <!-- Medication_request 의뢰서 사인이미지 -->
+ 	
+ 	<select id="Medication_confirmation_select_getByteImage" resultType="String"  parameterType="java.util.Map">
+		select sing_url FROM sign_teacher where request_id = #{request_id};
+ 	</select> <!-- Medication_confirmation 확인서 사인이미지 -->
+	
+	<select id="Medication_confirmation_select" resultType="com.test.rememberTest.Dto.Medication_confirmationDto" parameterType="java.util.Map">
+  	select medication_confirmation.*,Time_format(medication_request.dosing_time,'%H시 %i분') as dosing_time,
+	Date_format(medication_request.medication_date,'%Y년 %m월 %d일') as medication_date,
+	medication_request.volume,staff.staff_name,medication_request.`count`,center.center_name
+	from medication_confirmation
+	join medication_request
+	on medication_confirmation.request_id = medication_request.request_id
+	join staff
+	on medication_confirmation.staff_id = staff.staff_id
+ 	join center
+ 	on medication_confirmation.center_code = center.center_code
+	where medication_confirmation.request_id = #{request_id};
+	</select><!--Medication_confirmation 조회(대조서 상세 보기의 확인서 정보)-->
+	
+	<!--****************** 반(class) 관리 ****************** -->
+	<select id="Class_Select_AllList" resultType="com.test.rememberTest.Dto.ClassDto" parameterType="java.util.Map">
+		select * from class where center_code = #{center_code};
+	</select> <!--class all List-->
+	
+	<select id="Kid_select_ClassKid" resultType="com.test.rememberTest.Dto.KidDto" parameterType="java.util.Map">
+		 select * from kid  where center_code = #{center_code}
+		<if test="!class_id.equals('All')">
+     	  AND class_id = #{class_id}
+  		</if>
+  		ORDER BY kid_system_code ASC;
+	</select>	<!-- 원아 기본데이터 검색 -->
+	
+	<select id="Kid_select_tokenData" resultType="com.test.rememberTest.Dto.KidDto" parameterType="java.util.Map">
+		select parent.fcm_token
+		from kid
+		join parent_and_kid
+		on kid.kid_system_code = parent_and_kid.kid_system_code
+		join parent
+		on parent_and_kid.par_id = parent.par_id
+		where kid.center_code = #{center_code} AND parent_and_kid.check_stater ='승인'
+		<if test="!class_id.equals('All')">
+     	  AND class_id = #{class_id}
+  		</if>
+		ORDER BY kid.kid_system_code asc;
+	</select>	<!-- 원아 기본데이터 검색 -->
+	
+	<!--****************** Home_communication 관리 ****************** -->	
+	<select id="Home_communicationDao_select_communication_tagData" resultType="com.test.rememberTest.Dto.Home_communicationDto">
+		select * FROM communication_tag Order by tag_id Asc;		
+ 	</select> <!-- communication_tag 목록 셀렉 -->
+ 	
+ 	<insert id="Home_communicationDao_insert_home_communicationInsert" parameterType="com.test.rememberTest.Dto.Home_communicationDto">
+		  insert
+		  into home_communication
+		  (center_code, communication_id, staff_id, title, content, tag_id)
+		  value
+		  (#{center_code},#{communication_id},#{staff_id},#{title},#{content},#{tag_id});
+ 	</insert><!--home_communication insert -->
+ 	
+ 	<insert id="Home_communicationDao_insert_communication_pictureInsert" parameterType="java.util.Map">
+		  insert
+		  into communication_picture
+		  (communication_id, picture_url)
+		  value
+		  <foreach collection="image_url" item="item" index="index" separator="),(" open="(" close=");">
+	   	 	 #{communication_id},#{item}	   	 	
+		  </foreach>		 
+ 	</insert><!--home_communication_picture insert -->
+ 	
+ 	<select id="Home_communicationDao_select_communication_Maxcount" resultType="String" parameterType="String">
+		select IFNULL(max(communication_id)+1,'1') as communication_MaxCount
+		from home_communication
+		where center_code = #{center_code};	
+ 	</select> <!-- communication_tag 목록 셀렉 -->
+ 	
+ 	<insert id="Home_communicationDao_insert_communication_fileInsert" parameterType="java.util.Map">
+		  insert
+		  into file_attachement
+		  (communication_id, file_url, file_title)
+		  value
+		  <foreach collection="dtoList" item="item" index="index" separator="),(" open="(" close=");">
+	   	 	 #{item.communication_id},#{item.file_url},#{item.title}  	 	
+		  </foreach>		 
+ 	</insert><!--home_communication_file insert -->
+ 	
+ 	<insert id="Home_communicationDao_insert_communication_transInsert" parameterType="java.util.Map">
+		  insert
+		  into homecommunication_trans
+		  (communication_id, kid_system_code, center_code,state)
+		  value
+		  <foreach collection="KidList" item="item" index="index" separator="),(" open="(" close=");">
+	   	 	 #{communication_id},#{item.kid_system_code},#{center_code},'미확인'  	 	
+		  </foreach>		 
+ 	</insert><!--homecommunication_trans insert -->
+ 	
+ 		<select id="Home_communicationDao_select_classCommunicationList" resultType="com.test.rememberTest.Dto.Home_communicationDto" parameterType="java.util.Map">
+		select home_communication.center_code,home_communication.communication_id, home_communication.staff_id,
+		home_communication.title, home_communication.content, home_communication.tag_id,
+		Date_format(home_communication.create_time,'%Y.%m.%d') as create_time,
+		Date_format(home_communication.update_time,'%Y.%m.%d') as update_time,
+		staff.staff_name,communication_tag.tag_name
+		from kid
+		join homecommunication_trans
+		on kid.kid_system_code = homecommunication_trans.kid_system_code AND kid.class_id = #{class_id}		
+		join home_communication
+		on homecommunication_trans.communication_id = home_communication.communication_id
+		join staff
+  		on staff.staff_id = home_communication.staff_id
+  		join communication_tag
+ 		on home_communication.tag_id = communication_tag.tag_id
+		where home_communication.create_time like CONCAT(#{date},'%') || home_communication.update_time like CONCAT(#{date},'%')
+		group by homecommunication_trans.communication_id
+		order by home_communication.update_time desc, home_communication.title asc;
+ 	</select> <!-- 해당 클래스 가정통신문 목록 셀렉 -->
+ 	
+ 	<select id="Home_communicationDao_select_CommunicationDetailList" resultType="com.test.rememberTest.Dto.Home_communicationDto" parameterType="java.util.Map">
+		select home_communication.*,communication_tag.tag_name,kid.class_id
+		from home_communication
+		join communication_tag
+		on communication_tag.tag_id = home_communication.tag_id
+		join homecommunication_trans
+		on homecommunication_trans.communication_id = home_communication.communication_id
+		join kid
+		on homecommunication_trans.kid_system_code = kid.kid_system_code
+		where home_communication.communication_id =#{communication_id} group by homecommunication_trans.communication_id;
+ 	</select> <!-- 선택된 가정 통신문 상세 정보 -->
+ 	
+ 	<select id="Home_communication_select_CommunicationPicture" resultType="com.test.rememberTest.Dto.Home_communicationDto" parameterType="java.util.Map">
+		select *
+		from communication_picture
+		where communication_id = #{communication_id};
+ 	</select> <!-- 선택된 가정통신문 이미지 -->
+ 	
+ 	<select id="Home_communication_select_CommunicationFile" resultType="com.test.rememberTest.Dto.Home_communicationDto" parameterType="java.util.Map">
+		select *
+		from file_attachement
+		where communication_id = #{communication_id};
+ 	</select> <!-- 선택된 가정통신문 파일 -->
+ 	
+ 	<select id="Home_communication_select_transDetailList" resultType="com.test.rememberTest.Dto.Home_communicationDto" parameterType="java.util.Map">
+		select homecommunication_trans.*,kid.kid_name,kid.kid_pho
+	    from homecommunication_trans
+	    join kid
+	    on homecommunication_trans.kid_system_code = kid.kid_system_code
+	    where communication_id = #{communication_id};
+ 	</select> <!-- 선택된 가정 통신문 확인여부 조회-->
+ 	
+ 	<update id="Home_communicationDao_update_home_communicationUpdate" parameterType="com.test.rememberTest.Dto.Home_communicationDto">
+       update home_communication 
+       Set title=#{title}, content=#{content}, tag_id = #{tag_id}, staff_id = #{staff_id}
+       where communication_id = #{communication_id};
+    </update><!-- 선택된 가정 통신문 수정-->
+ 	
+ 	<select id="Board_and_kid_select_routeData" resultType="com.test.rememberTest.Dto.Board_and_kidDto" parameterType="java.util.Map">
+		select * 
+		from board_and_kid
+		where board_and_kid.route_id = #{route_id};
+	</select>
+ 	<delete id="Home_communicationDao_delete_home_communicationDelete" parameterType="String">
+		delete from home_communication where communication_id = #{communication_id}
+	</delete> <!-- 선택된 가정 통신문 삭제 -->
+	
+	<!--****************** 노선 관리 ****************** -->
+	<select id="Route_select_AllData" resultType="com.test.rememberTest.Dto.BusRouteDto" parameterType="java.util.Map">
+		 select * from route where route.affiliation = #{center_code};		
+	</select> <!--차량 상세 정보 노선 배치 정보 -->
+	
+	<select id="Route_select_RouteStationData" resultType="com.test.rememberTest.Dto.BusRouteDto" parameterType="java.util.Map">
+		 select station.station_name,course_and_station.station_id
+		 from route
+		 join course_and_station 
+		 on route.course_id = course_and_station.course_id
+		 join station
+		 on course_and_station.station_id = station.station_id
+		 where route.route_id = #{route_id} and station.station_id not like '%S0_00' order by course_and_station.`order` asc;
+	</select>	<!-- 노선에 대치된 정류장 정보를 select -->
+	
+	<select id="BusRoute_select_RouteBusData" resultType="com.test.rememberTest.Dto.BusRouteDto" parameterType="java.util.Map">
+		select route.route_start,route.route_arrive,
+		route.main_staff_id,s1.staff_name as main_staff_name,
+		route.sub_staff_id,s2.staff_name as sub_staff_name,
+		route.route_name,route.route_sem,route.route_year,
+		bus.staff_id as bus_staff_id, s3.staff_name as bus_staff_name,
+		bus.equipment_gate_id, bus.equipment_tablet_id, bus.bus_name, bus.bus_num,
+		bus.bus_borad, bus.bus_insur, bus.bus_com
+		from route
+		join staff s1
+		on route.main_staff_id = s1.staff_id
+		join staff s2
+		on route.sub_staff_id = s2.staff_id
+		join bus 
+		on bus.bus_id = route.bus_id
+		join staff s3
+		on bus.staff_id = s3.staff_id
+		where route.route_id = #{route_id};
+	</select>
+	
+	<select id="Teach_bus_check_select_weekdata" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.Teach_bus_checkDto">
+		SELECT t.center_code,t.staff_id,t.teach_buslist_type_order,t.teach_buslist_cont_order,t.teach_check,
+		DATE_FORMAT(t.teach_check_date,'%Y.%m.%d') AS checkDateAll ,
+		t.teach_check_id, DATE_FORMAT(t.today,'%d') AS checkDateD,
+		teach_bus_ckecklist.teach_buslist_type, teach_bus_ckecklist.teach_buslist_cont
+		FROM teach_bus_check t
+		join teach_bus_ckecklist
+		on (t.center_code = teach_bus_ckecklist.affiliation)
+		AND (t.teach_buslist_type_order = teach_bus_ckecklist.teach_buslist_type_order) AND t.teach_buslist_cont_order = teach_bus_ckecklist.teach_buslist_cont_order
+		WHERE t.center_code=#{center_code} and t.today BETWEEN #{startDate} AND #{endDate} and t.route_id=#{route_id}
+		order by checkDateD asc, t.teach_buslist_type_order asc, t.teach_buslist_cont_order asc;
+    </select>
+    
+    <!--****************** OnOffImpl 관리 ****************** -->	
+ 		<select id="OnOff_select_onoffData" resultType="com.test.rememberTest.Dto.OnOffDto" parameterType="java.util.Map">
+      <choose>
+         <when test="route_type.equals('on')">
+            select kid.kid_system_code,kid.kid_name,kid.par_id,
+            IFNULL(parent.par_name,'-') as par_name,
+            IFNULL(parent.par_phone,'-') as par_phone,
+            kid.kid_pho,route.route_name,station.station_name,
+            <choose>
+               <when test="kidsort">
+                  Date_format(kid_onoff_history.today,'%d') as today,
+               </when>
+               
+               <otherwise>
+                  Date_format(kid_onoff_history.today,'%Y.%m.%d') as today,
+               </otherwise>
+            </choose>            
+            kid_onoff_history.beacon_id,
+            IFNULL(if(kid_onoff_history.on_time='1999-01-01','-', Time_format(kid_onoff_history.on_time,'%H:%i')),'-') as on_time,
+            kid_onoff_history.route_id_on,kid_onoff_history.station_id_on,
+            IFNULL(if(attendance_history.on_type='','-', Time_format(attendance_history.on_type,'%H:%i')),'-')  as off_time,
+            late_abse.*
+            from kid_onoff_history
+            left join attendance_history
+            on kid_onoff_history.today = attendance_history.today AND kid_onoff_history.kid_system_code = attendance_history.kid_system_code
+            left join kid
+            on attendance_history.kid_system_code = kid.kid_system_code
+            left join parent
+            on kid.par_id = parent.par_id
+            left join route
+            on kid_onoff_history.route_id_on = route.route_id
+            left join station
+            on kid_onoff_history.station_id_on = station.station_id
+            left join course_and_station
+            on route.course_id = course_and_station.course_id AND kid_onoff_history.station_id_on = course_and_station.station_id
+            left join late_abse
+            on late_abse.kid_system_code = kid.kid_system_code AND late_abse.late_date = kid_onoff_history.today
+            where
+            (kid_onoff_history.route_id_on = #{route} or kid_onoff_history.route_id_on = '-')                     
+            <choose>
+               <when test="firstDate != null">
+                  AND (kid_onoff_history.today  <![CDATA[<=]]> #{firstDate})                  
+               </when>         
+               <otherwise>      
+                  AND (kid_onoff_history.today BETWEEN #{startDate} AND #{endDate}) 
+               </otherwise>               
+            </choose>            
+            <if test="!station.equals('All')">
+               AND kid_onoff_history.station_id_on = #{station}
+            </if>   
+            <choose>
+               <when test="kidsort">
+                  order by kid_onoff_history.today asc, course_and_station.`order` asc, kid_onoff_history.beacon_id asc;
+               </when>
+                  
+               <otherwise>
+                  order by kid_onoff_history.today asc,course_and_station.`order` asc, kid_onoff_history.on_time asc;
+               </otherwise>
+            </choose>         
+            
+         </when>
+         
+         <otherwise>
+            select kid.kid_system_code,kid.kid_name,kid.par_id,
+            IFNULL(parent.par_name,'-') as par_name,
+            IFNULL(parent.par_phone,'-') as par_phone,
+            kid.kid_pho,route.route_name,station.station_name,
+            <choose>
+               <when test="kidsort">
+                  Date_format(kid_onoff_history.today,'%d') as today,
+               </when>
+               
+               <otherwise>
+                  Date_format(kid_onoff_history.today,'%Y.%m.%d') as today,
+               </otherwise>
+            </choose>            
+            kid_onoff_history.beacon_id,
+            IFNULL(if(kid_onoff_history.off_time='1999-01-01','-', Time_format(kid_onoff_history.off_time,'%H:%i')),'-')  as off_time,
+            kid_onoff_history.route_id_off,kid_onoff_history.station_id_off,
+            IFNULL(if(attendance_history.off_type='','-', Time_format(attendance_history.off_type,'%H:%i')),'-')  as on_time,
+            late_abse.*
+            from kid_onoff_history
+            left join attendance_history
+            on kid_onoff_history.today = attendance_history.today AND kid_onoff_history.kid_system_code = attendance_history.kid_system_code
+            left join kid
+            on attendance_history.kid_system_code = kid.kid_system_code
+            left join parent
+            on kid.par_id = parent.par_id
+            left join route
+            on kid_onoff_history.route_id_off = route.route_id
+            left join station
+            on kid_onoff_history.station_id_off = station.station_id
+            left join course_and_station
+            on route.course_id = course_and_station.course_id AND kid_onoff_history.station_id_off = course_and_station.station_id
+            left join late_abse
+            on late_abse.kid_system_code = kid.kid_system_code AND late_abse.late_date = kid_onoff_history.today
+            where
+            (kid_onoff_history.route_id_off = #{route} or kid_onoff_history.route_id_off = '-')
+            <choose>
+               <when test="firstDate != null">   
+                  AND (kid_onoff_history.today  <![CDATA[<=]]> #{firstDate})    
+               </when>         
+               <otherwise>      
+                  AND (kid_onoff_history.today BETWEEN #{startDate} AND #{endDate})
+               </otherwise>               
+            </choose>            
+            <if test="!station.equals('All')">
+               #AND kid_onoff_history.station_id_off = #{station}
+            </if>
+            <choose>
+               <when test="kidsort">
+                  order by kid_onoff_history.today asc, course_and_station.`order` asc, kid_onoff_history.beacon_id asc;
+               </when>
+                  
+               <otherwise>
+                  order by kid_onoff_history.today asc,course_and_station.`order` asc, kid_onoff_history.on_time asc;
+               </otherwise>
+            </choose>            
+         </otherwise>
+      </choose>
+    </select>
+ 	
+ 	<!--****************** attendance_history 관리 ****************** -->	
+	<select id="attendance_history_select_onoffData" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.OnOffDto">
+		select attendance_history.center_code,attendance_history.beacon_id, attendance_history.today,
+		ifnull(if(attendance_history.on_type='','-',Time_format(attendance_history.on_type,'%H:%i')),'-') as on_type,
+		ifnull(if(attendance_history.off_type='','-',Time_format(attendance_history.off_type,'%H:%i')),'-') as off_type,
+		attendance_history.equipment_id,		
+		kid.kid_system_code,kid.kid_name,kid.kid_pho,
+		ifnull(if((k1.on_time='1999-01-01'),'도보',k1.on_time),'도보') as on_time,
+		ifnull(if((k1.off_time='1999-01-01'),'도보',k1.off_time),'도보') as off_time
+		from attendance_history
+		join kid
+		on attendance_history.kid_system_code = kid.kid_system_code
+		left join kid_onoff_history k1
+		on (attendance_history.today = k1.today) AND (attendance_history.kid_system_code = k1.kid_system_code)
+		where kid.class_id = #{class_id}
+		<choose>
+			<when test="firstDate != null">
+				AND (attendance_history.today <![CDATA[<=]]> #{firstDate})	
+			</when>			
+			<otherwise>		
+				AND (attendance_history.today BETWEEN #{startDate} AND #{endDate})
+			</otherwise>					
+		</choose>
+		order by attendance_history.beacon_id asc, k1.today asc;
+	</select>
+	
+	<select id="attendance_history_select_onoffDataGroup" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.OnOffDto">
+		select attendance_history.center_code,attendance_history.beacon_id,
+		attendance_history.equipment_id,
+		kid.kid_system_code,kid.kid_name,kid.kid_pho,
+		group_concat(attendance_history.today) as today,
+		group_concat(ifnull(if(attendance_history.on_type='','-',Time_format(attendance_history.on_type,'%H:%i')),'-')) as on_type,
+		group_concat(ifnull(if(attendance_history.off_type='','-',Time_format(attendance_history.off_type,'%H:%i')),'-')) as off_type,
+		group_concat(if(k1.on_time='1999-01-01','도보','차량')) as on_time,		
+		group_concat(if(k1.off_time='1999-01-01','도보','차량')) as off_time		
+		from attendance_history 
+		join kid
+		on attendance_history.kid_system_code = kid.kid_system_code
+		left join kid_onoff_history k1
+		on (attendance_history.today = k1.today) AND (attendance_history.kid_system_code = k1.kid_system_code)
+		where kid.class_id = #{class_id}
+		<choose>
+			<when test="firstDate != null">
+				AND (attendance_history.today <![CDATA[<=]]> #{firstDate})	
+			</when>			
+			<otherwise>		
+				AND (attendance_history.today BETWEEN #{startDate} AND #{endDate})
+			</otherwise>					
+		</choose>
+		group by attendance_history.beacon_id
+		order by attendance_history.beacon_id asc, k1.today asc;
+	</select>
+	
+	<!-- course_and_station.`order` -->
+ 	<select id="OnOff_select_onoffDataGroup" resultType="com.test.rememberTest.Dto.OnOffDto" parameterType="java.util.Map">
+			<choose>
+			<when test="route_type.equals('on')">
+				select kid.kid_system_code,kid.kid_name,kid.par_id,
+				IFNULL(parent.par_name,'-') as par_name,
+				IFNULL(parent.par_phone,'-') as par_phone,
+				kid.kid_pho,
+				group_concat(if(route.route_name is null,'-',route.route_name)) as route_name,
+				group_concat(if(station.station_name is null,'-',station.station_name)) as station_name,
+				group_concat(Date_format(kid_onoff_history.today,'%e')) as today,
+				kid_onoff_history.beacon_id,
+				group_concat(IFNULL(if(kid_onoff_history.on_time='1999-01-01','-', Time_format(kid_onoff_history.on_time,'%H:%i')),'-')) as on_time,
+				group_concat(kid_onoff_history.route_id_off) as route_id_off,
+				group_concat(kid_onoff_history.station_id_off) as station_id_off,
+				group_concat(IFNULL(if(attendance_history.on_type='1999-01-01','-', Time_format(attendance_history.on_type,'%H:%i')),'-')) as off_time,
+				course_and_station.`order`
+				from kid_onoff_history
+				left join attendance_history
+				on kid_onoff_history.today = attendance_history.today AND kid_onoff_history.kid_system_code = attendance_history.kid_system_code
+				left join kid
+				on attendance_history.kid_system_code = kid.kid_system_code				
+				left join parent
+				on kid.par_id = parent.par_id
+				left join route
+				on kid_onoff_history.route_id_on = route.route_id
+				left join station
+				on kid_onoff_history.station_id_on = station.station_id
+				left join course_and_station
+				on route.course_id = course_and_station.course_id AND kid_onoff_history.station_id_on = course_and_station.station_id
+				join board_and_kid
+				on route.route_id = board_and_kid.route_id AND board_and_kid.kid_system_code = kid.kid_system_code
+				where (kid_onoff_history.today BETWEEN #{startDate} AND #{endDate}) AND (kid_onoff_history.route_id_on = #{route} or kid_onoff_history.route_id_on = '-')
+				group by kid_onoff_history.beacon_id
+				order by course_and_station.`order` asc, kid_onoff_history.today asc, kid_onoff_history.off_time asc;
+			</when>
+			
+			<otherwise>
+				select kid.kid_system_code,kid.kid_name,kid.par_id,
+				IFNULL(parent.par_name,'-') as par_name,
+				IFNULL(parent.par_phone,'-') as par_phone,
+				kid.kid_pho,
+				group_concat(if(route.route_name is null,'-',route.route_name)) as route_name,
+				group_concat(if(station.station_name is null,'-',station.station_name)) as station_name,
+				group_concat(Date_format(kid_onoff_history.today,'%e')) as today,
+				kid_onoff_history.beacon_id,
+				group_concat(IFNULL(if(kid_onoff_history.off_time='1999-01-01','-', Time_format(kid_onoff_history.off_time,'%H:%i')),'-')) as off_time,
+				group_concat(kid_onoff_history.route_id_off) as route_id_off,
+				group_concat(kid_onoff_history.station_id_off) as station_id_off,
+				group_concat(IFNULL(if(attendance_history.off_type='1999-01-01','-', Time_format(attendance_history.off_type,'%H:%i')),'-')) as on_time,
+				course_and_station.`order`
+				from kid_onoff_history
+				left join attendance_history
+				on kid_onoff_history.today = attendance_history.today AND kid_onoff_history.kid_system_code = attendance_history.kid_system_code
+				left join kid
+				on attendance_history.kid_system_code = kid.kid_system_code				
+				left join parent
+				on kid.par_id = parent.par_id
+				left join route
+				on kid_onoff_history.route_id_off = route.route_id
+				left join station
+				on kid_onoff_history.station_id_off = station.station_id
+				left join course_and_station
+				on route.course_id = course_and_station.course_id AND kid_onoff_history.station_id_off = course_and_station.station_id
+				join board_and_kid
+				on route.route_id = board_and_kid.route_id AND board_and_kid.kid_system_code = kid.kid_system_code
+				where (kid_onoff_history.today BETWEEN #{startDate} AND #{endDate}) AND (kid_onoff_history.route_id_off = #{route} or kid_onoff_history.route_id_off = '-')
+				group by kid_onoff_history.beacon_id
+				order by course_and_station.`order` asc, kid_onoff_history.today asc,  kid_onoff_history.off_time asc;			
+			</otherwise>
+		</choose>
+ 	</select>
+	
+	<!--****************** Go_come_daily 관리 ****************** -->	
+ 	<insert id="Go_come_daily_insert" parameterType="com.test.rememberTest.Dto.Go_come_dailyDto">
+ 		insert into go_come_daily
+		(doc_year, doc_mon, class_id, doc_start, doc_end, center_code, staff_id)
+		value
+		(#{doc_year}, #{doc_mon}, #{class_id}, #{doc_start}, #{doc_end}, #{center_code}, #{staff_id});
+ 	</insert>
+ 	
+ 	<select id="Go_come_daily_select" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.Go_come_dailyDto">
+ 		select * from go_come_daily
+ 		join class on class.class_id = go_come_daily.class_id
+		where go_come_daily.doc_start = #{doc_start} AND go_come_daily.doc_end = #{doc_end} AND go_come_daily.class_id = #{class_id}
+		order by doc_id desc limit 1;	
+ 	</select> 
+ 	
+ 	<select id="Go_come_daily_selectMonth" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.Go_come_dailyDto">
+		select kid.kid_system_code,kid.kid_name,
+		group_concat(DATE_format(attendance_history.today,'%e')) as today,
+		group_concat(if(attendance_history.on_type is null,'결','출'))as on_type
+		from attendance_history
+		join beacon
+		on attendance_history.beacon_id = beacon.beacon_id
+		join kid
+		on beacon.kid_system_code = kid.kid_system_code
+		where (kid.class_id = #{class_id}) AND (attendance_history.today like CONCAT(#{Month},'%'))
+		group by attendance_history.beacon_id
+		order by attendance_history.beacon_id asc;
+ 	</select> 	
+	
+	<!--****************** Go_come_daily_car 관리 ****************** -->	
+ 	<insert id="Go_come_daily_car_insert" parameterType="com.test.rememberTest.Dto.Go_come_daily_carDto">
+		insert into go_come_daily_car
+		(go_doc_ostart,go_doc_oarrive,route_id,affiliation,registrant,go_doc_title
+		,go_doc_year,go_doc_mon,go_doc_start,go_doc_end,go_doc_maint,go_doc_subt,
+		go_doc_rname,go_doc_osem,go_doc_oyear,go_doc_dirv,go_doc_tablet,
+		go_doc_gate,go_doc_bname,go_doc_bnum,go_doc_borad,go_doc_bcom,go_doc_binsur)
+		value
+		(TIME(#{go_doc_ostart}),TIME(#{go_doc_oarrive}),#{route_id},#{affiliation},#{registrant},#{go_doc_title},
+		#{go_doc_year},#{go_doc_mon},#{go_doc_start},#{go_doc_end},#{go_doc_maint},#{go_doc_subt},
+		#{go_doc_rname},#{go_doc_osem},#{go_doc_oyear},#{go_doc_dirv},#{go_doc_tablet},#{go_doc_gate},
+		#{go_doc_bname},#{go_doc_bnum},#{go_doc_borad},#{go_doc_bcom},#{go_doc_binsur});
+ 	</insert>
+ 	
+ 	<select id="Go_come_daily_car_select" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.Go_come_daily_carDto">
+ 		select * from go_come_daily_car 
+ 		where go_doc_start = #{go_doc_start} AND go_doc_end = #{go_doc_end} AND route_id = #{route_id}
+ 		order by go_doc_id asc limit 1; 	
+ 	</select>
+ 	<select id="unidentified_Kid_select_tokenData" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.KidDto">
+		select parent.fcm_token from homecommunication_trans 
+		join kid on homecommunication_trans.kid_system_code = kid.kid_system_code
+		join parent on kid.par_id = parent.par_id
+		where (homecommunication_trans.communication_id = #{communication_id}) 
+		AND (homecommunication_trans.center_code=#{center_code}) AND (homecommunication_trans.state = '미확인');	
+ 	</select>
+ 	
+
+ 	<select id="staffList_notAdmin" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.StaffDto">
+		select * from staff where center_code =#{center_code} and staff_position != '원장'
+		order by staff_name asc;	
+ 	</select>
+ 	<select id="staffList_notAdmin_group" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.StaffDto">
+		select staff.admin_area,staff.center_code,staff.registrant,staff.staff_charge,
+		staff.staff_email,staff.staff_id,staff.staff_name,staff.staff_phone
+		,staff.staff_phot,staff.staff_position,staff.staff_pw,staff.staff_type
+		,IFNULL(group_Concat(class.class_name),'-') as class_name 
+		from staff 
+		left join class
+		on class.center_code = staff.center_code AND class.staff_id_1 = staff.staff_id  or
+		class.center_code = staff.center_code AND class.staff_id_2 = staff.staff_id
+		where staff.center_code =#{center_code} 
+		and staff.staff_position != '원장'
+		group by staff.staff_id
+		order by staff.staff_name asc;	
+ 	</select>
+
+ 	<select id="staffList_StaffRoles" parameterType="java.util.Map" resultType="com.test.rememberTest.Dto.StaffDto">
+	 	select *
+		from user_roles 
+		where user_roles.center_code =#{center_code} AND user_roles.staff_id = #{staff_id};		
+ 	</select> 	
+ 	
+</mapper>
